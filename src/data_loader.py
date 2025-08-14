@@ -10,11 +10,13 @@ from torch.utils.data import Dataset, DataLoader
 # Add the path to find the dataset generator
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Always use constants from utils.constants for consistency
+from utils.constants import ScenarioType, RiskLevel
+
 try:
-    from attached_assets.safetyAppDataset_1755171350672 import TRSCompliantDatasetGenerator, ScenarioType, RiskLevel, SensorReading
+    from attached_assets.safetyAppDataset_1755171350672 import TRSCompliantDatasetGenerator, SensorReading
 except ImportError:
-    # Fallback imports in case the file path is different
-    from utils.constants import ScenarioType, RiskLevel
+    TRSCompliantDatasetGenerator = None
     
     # Define SensorReading as a fallback
     from dataclasses import dataclass
