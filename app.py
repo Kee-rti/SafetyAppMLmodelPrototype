@@ -884,7 +884,8 @@ def onnx_export_page():
                     perf_results = exporter.benchmark_models(
                         pytorch_model=st.session_state.model,
                         onnx_path=onnx_path,
-                        num_runs=100
+                        num_runs=100,
+                        input_shape=(1, 30, 39)
                     )
                     
                     comparison_df = pd.DataFrame([
