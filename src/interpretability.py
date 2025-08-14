@@ -89,20 +89,35 @@ class ModelInterpreter:
         
         # Prefer DeepExplainer; fall back to GradientExplainer if unsupported
         explainer = None
+        used_deep = False
         try:
             explainer = shap.DeepExplainer(self.model_for_explain, bg)
+            used_deep = True
         except Exception as e:
             print(f"DeepExplainer unavailable ({e}); falling back to GradientExplainer.")
             explainer = shap.GradientExplainer(self.model_for_explain, bg)
+            used_deep = False
         
         # Calculate SHAP values
-        shap_values = explainer.shap_values(features[:num_samples])
+        try:
+            if used_deep:
+                try:
+                    shap_values = explainer.shap_values(features[:num_samples], check_additivity=False)
+                except TypeError:
+                    shap_values = explainer.shap_values(features[:num_samples])
+            else:
+                shap_values = explainer.shap_values(features[:num_samples])
+        except AssertionError as e:
+            # Additivity failures can occur on complex graphs; retry without DeepExplainer
+            print(f"SHAP additivity assertion failed ({e}); retrying with GradientExplainer...")
+            explainer = shap.GradientExplainer(self.model_for_explain, bg)
+            shap_values = explainer.shap_values(features[:num_samples])
         
         # Handle different output formats
         if isinstance(shap_values, list):
             shap_results = {
                 'shap_values': shap_values,
-                'base_values': explainer.expected_value if hasattr(explainer, 'expected_value') else [0.0],
+                'base_values': getattr(explainer, 'expected_value', [0.0]),
                 'features': features[:num_samples],
                 'labels': labels[:num_samples],
                 'feature_names': self.feature_names
@@ -110,7 +125,7 @@ class ModelInterpreter:
         else:
             shap_results = {
                 'shap_values': [shap_values],
-                'base_values': [explainer.expected_value] if hasattr(explainer, 'expected_value') else [0.0],
+                'base_values': [getattr(explainer, 'expected_value', 0.0)],
                 'features': features[:num_samples],
                 'labels': labels[:num_samples],
                 'feature_names': self.feature_names
