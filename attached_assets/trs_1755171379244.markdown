@@ -1,0 +1,2171 @@
+# Technical Requirements Specification (TRS)
+## AI-Based System for Alerting Caregivers About Trapped Dependents
+### Complete Product Development Blueprint
+
+**Version:** 1.0  
+**Date:** January 13, 2025  
+**Prepared by:** Quantum Leap Consultants Engineering Team
+- **Lead Engineers**: Akhila, Shivam, Betsy, Rudra
+- **Technical Oversight**: Nitin Sir (Safety Specialist)
+- **Additional Contributors**: Preeyas, Shravani, Neeha  
+**Document Type:** Complete Technical Specification and Build Guide  
+**Classification:** Confidential - Technical Implementation
+
+---
+
+## Document Control Information
+
+| Attribute | Details |
+|-----------|---------|
+| **Document ID** | TRS-AICAG-001 |
+| **Classification** | Confidential - Technical Implementation |
+| **Distribution** | Hardware Engineers, Software Engineers, System Integrators |
+| **Review Cycle** | Bi-weekly during development, Monthly post-release |
+| **Approval Authority** | Chief Technology Officer, Hardware Lead, Software Lead |
+| **Version Control** | Git-based with technical versioning |
+| **Standards Compliance** | IPC-2221, IEC 61508, ISO 26262, IEEE 1012 |
+| **Manufacturing Standards** | IPC-A-610, J-STD-001, ISO 9001 |
+
+---
+
+## Table of Contents
+
+1. [System Overview](#1-system-overview)
+2. [Hardware Requirements & Specifications](#2-hardware-requirements--specifications)
+3. [Software Architecture & Requirements](#3-software-architecture--requirements)
+4. [System Integration Requirements](#4-system-integration-requirements)
+5. [Power Management System](#5-power-management-system)
+6. [Communication Systems](#6-communication-systems)
+7. [Environmental & Mechanical Requirements](#7-environmental--mechanical-requirements)
+8. [Manufacturing & Assembly Specifications](#8-manufacturing--assembly-specifications)
+9. [Testing & Validation Procedures](#9-testing--validation-procedures)
+10. [Quality Control & Assurance](#10-quality-control--assurance)
+11. [Installation & Deployment](#11-installation--deployment)
+12. [Maintenance & Support Procedures](#12-maintenance--support-procedures)
+13. [Compliance & Certification](#13-compliance--certification)
+14. [Bill of Materials (BOM)](#14-bill-of-materials-bom)
+15. [Technical Appendices](#15-technical-appendices)
+
+---
+
+## 1. System Overview
+
+### 1.1 Product Architecture
+
+The AI-Based Caregiver Alert System is a comprehensive IoT safety monitoring solution built around the Raspberry Pi 5 platform, integrating multiple sensor modalities with edge AI processing for real-time dependent safety monitoring.
+
+**System Block Diagram:**
+
+```mermaid
+graph TB
+
+  subgraph Physical_Layer
+
+    subgraph Sensor_Array
+      PIR["PIR Motion Sensors - HC-SR501"]
+      THERMAL["Thermal Camera - AMG8833"]
+      RADAR["60GHz Radar - BGT60TR13C"]
+      TEMP["Temperature Sensor - DS18B20"]
+      CO2["CO2 Sensor - SCD40"]
+      HUMIDITY["Humidity Sensor - SHT40"]
+      AUDIO["Microphone Array - INMP441"]
+      MAGNETIC["Magnetic Sensor - MC-38"]
+      HALL["Hall Effect Sensor - A3144"]
+    end
+
+    subgraph Processing_Unit
+      RPI["Raspberry Pi 5 - 4GB RAM"]
+      STORAGE["256GB SSD - Lexar NM620"]
+      RTC["Real-Time Clock - DS3231"]
+      TPM["Crypto Chip - ATECC608B"]
+    end
+
+    subgraph Communication
+      WIFI["WiFi 6 Module"]
+      BT["Bluetooth 5.0"]
+      GSM["GSM Module - SIM7600G"]
+      ETH["Ethernet - Gigabit"]
+    end
+
+    subgraph Power_Management
+      PSU["Power Supply - 12V 5A"]
+      BATTERY["Backup Battery - 18650 Li-ion"]
+      CHARGER["Battery Charger - TP4056"]
+      UPS["UPS Module - Custom PCB"]
+    end
+
+    subgraph Interface_Control
+      GPIO["GPIO Expander - MCP23017"]
+      ADC["ADC Module - ADS1115"]
+      PWM["PWM Controller - PCA9685"]
+      DISPLAY["Status Display - SSD1306 OLED"]
+    end
+
+  end
+
+  subgraph Software_Layer
+
+    subgraph Operating_System
+      OS["Raspberry Pi OS - Debian 12"]
+      KERNEL["Linux Kernel 6.1+"]
+      DRIVERS["Custom Drivers"]
+    end
+
+    subgraph Application_Stack
+      AI_ENGINE["AI Engine - PyTorch + ONNX"]
+      SENSOR_MGR["Sensor Manager - Python/C++"]
+      COMM_MGR["Comm Manager - Node.js"]
+      WEB_APP["Web App - React + Express"]
+      MOBILE_APP["Mobile App - React Native"]
+    end
+
+    subgraph Data_Management
+      LOCAL_DB["Local DB - SQLite"]
+      CACHE["Redis Cache"]
+      TIME_SERIES["InfluxDB"]
+      FILE_STORE["File Storage"]
+    end
+
+  end
+
+  subgraph Integration_Layer
+
+    subgraph Internal_Communication
+      I2C_BUS["I2C Bus"]
+      SPI_BUS["SPI Bus"]
+      UART_BUS["UART Bus"]
+      GPIO_BUS["GPIO Bus"]
+    end
+
+    subgraph External_Communication
+      MQTT["MQTT Broker"]
+      REST_API["REST API Gateway"]
+      WEBSOCKET["WebSocket Server"]
+      SMS_GW["SMS Gateway"]
+    end
+
+  end
+
+  %% Physical Connections
+  PIR --> GPIO_BUS
+  THERMAL --> I2C_BUS
+  RADAR --> SPI_BUS
+  TEMP --> GPIO_BUS
+  CO2 --> I2C_BUS
+  HUMIDITY --> I2C_BUS
+  AUDIO --> I2C_BUS
+  MAGNETIC --> GPIO_BUS
+  HALL --> GPIO_BUS
+
+  %% Processing Connections
+  RPI --> OS
+  STORAGE --> OS
+  RTC --> I2C_BUS
+  TPM --> SPI_BUS
+
+  %% Software Stack
+  OS --> AI_ENGINE
+  AI_ENGINE --> SENSOR_MGR
+  SENSOR_MGR --> COMM_MGR
+  COMM_MGR --> WEB_APP
+  COMM_MGR --> MOBILE_APP
+
+  %% Data Flow
+  LOCAL_DB --> AI_ENGINE
+  CACHE --> WEB_APP
+  TIME_SERIES --> SENSOR_MGR
+
+  %% Communication Flow
+  I2C_BUS --> MQTT
+  SPI_BUS --> REST_API
+  UART_BUS --> WEBSOCKET
+  GPIO_BUS --> SMS_GW
+
+```
+
+### 1.2 System Requirements Summary
+
+**Performance Targets:**
+- **Detection Accuracy**: ≥99.8% across all age groups and environments
+- **Response Time**: <3 seconds from detection to alert transmission
+- **Uptime**: ≥99.9% system availability
+- **Battery Life**: ≥24 hours during power outage
+- **Operating Temperature**: -20°C to +60°C
+- **Humidity Range**: 5% to 95% RH (non-condensing)
+
+**Key Specifications:**
+- **Processing Power**: ARM Cortex-A76 quad-core @ 2.4GHz
+- **Memory**: 8GB LPDDR4X-4267 SDRAM
+- **Storage**: 128GB NVMe SSD + 32GB microSD
+- **Sensor Count**: 15+ sensors per unit
+- **Communication**: WiFi 6, Bluetooth 5.0, GSM/LTE, Ethernet
+- **Power Consumption**: <15W operational, <5W standby
+
+---
+
+## 2. Hardware Requirements & Specifications
+
+### 2.1 Core Processing Unit
+
+**REQ-HW-001: Primary Processing Platform (Cost-Optimized)**
+- **Component**: Raspberry Pi 5 Model B - 4GB
+- **Part Number**: RPI5-MOD-B-4GB
+- **Cost Optimization**: ₹1,340 savings while maintaining full performance
+- **Specifications**:
+  ```
+  Processor: Broadcom BCM2712 (ARM Cortex-A76 quad-core @ 2.4GHz)
+  Memory: 4GB LPDDR4X-4267 SDRAM (adequate for edge AI inference)
+  GPU: VideoCore VII GPU (supports OpenGL ES 3.1, Vulkan 1.2)
+  Storage: microSD slot, 2×USB 3.0, 2×USB 2.0
+  GPIO: 40-pin GPIO header (compatible with earlier models)
+  Display: 2×4Kp60 HDMI display outputs
+  Camera: 2×4-lane MIPI camera/display transceivers
+  PCIe: 1×PCIe 2.0 x1 interface (requires separate M.2 HAT)
+  Ethernet: Gigabit Ethernet (Broadcom BCM54213PE)
+  Wireless: 2.4GHz and 5.0GHz IEEE 802.11ac (WiFi 6)
+  Bluetooth: Bluetooth 5.0, BLE
+  Power: 5V DC via USB-C (recommended 5V 5A)
+  Dimensions: 85×56×17mm
+  Weight: 45g
+  Operating Temperature: 0°C to +50°C
+  ```
+
+**REQ-HW-002: Secondary Storage (Cost-Optimized)**
+- **Component**: Lexar NM620 NVMe SSD
+- **Part Number**: NM620-256GB
+- **Capacity**: 256GB (sufficient for 5+ years of sensor data)
+- **Cost Optimization**: ₹6,151 savings vs 1TB Samsung variant
+- **Interface**: M.2 2280 PCIe Gen 3.0 x4 NVMe 1.3
+- **Sequential Read**: Up to 3,300 MB/s
+- **Sequential Write**: Up to 3,000 MB/s
+- **Endurance**: 200 TBW (30× more write cycles than system requirements)
+- **Justification**: Local data storage ~50GB for 5 years, OS + apps ~32GB, models ~20GB
+- **Operating Temperature**: 0°C to +70°C
+
+### 2.2 Sensor Array Specifications
+
+**REQ-HW-003: Motion Detection Sensors**
+
+**Primary PIR Sensor:**
+- **Component**: HC-SR501 PIR Motion Detector
+- **Part Number**: HC-SR501
+- **Specifications**:
+  ```
+  Detection Range: 3-7 meters (adjustable)
+  Detection Angle: 120° cone angle
+  Operating Voltage: 4.5-20V DC
+  Operating Current: <50μA
+  Output: 3.3V/0V (digital)
+  Trigger Methods: L - non-repeatable, H - repeatable
+  Delay Time: 0.3s-18s (adjustable)
+  Block Time: 2.5s (default)
+  Operating Temperature: -15°C to +70°C
+  Dimensions: 32×24×25mm
+  Fresnel Lens: Included for enhanced sensitivity
+  ```
+
+**Secondary PIR Sensor (High Sensitivity):**
+- **Component**: AM312 Mini PIR Sensor
+- **Part Number**: AM312
+- **Detection Range**: 3 meters
+- **Detection Angle**: 100°
+- **Ultra-low Power**: 15μA operating current
+- **Compact Size**: 16×15×12mm
+
+**REQ-HW-004: Thermal Imaging System (Cost-Optimized)**
+- **Component**: AMG8833 Thermal Camera
+- **Part Number**: AMG8833
+- **Cost Optimization**: ₹3,400 savings vs MLX90640 while maintaining presence detection
+- **Specifications**:
+  ```
+  Resolution: 8×8 pixels (sufficient for presence detection)
+  Field of View: 60°×60°
+  Temperature Range: 0°C to +80°C
+  Accuracy: ±2.5°C (typical)
+  Refresh Rate: 10Hz (1Hz to 10Hz)
+  Interface: I2C (up to 400kHz)
+  Operating Voltage: 3.3V or 5V
+  Operating Current: 4.5mA (typical)
+  Package: 20-lead HTSSOP with lens
+  ```
+- **Note**: For vital sign monitoring applications, upgrade to MLX90640 32×24 variant
+
+**REQ-HW-005: Radar Sensor System**
+- **Component**: BGT60TR13C 60GHz Radar
+- **Part Number**: BGT60TR13C
+- **Specifications**:
+  ```
+  Frequency Range: 57GHz to 64GHz
+  RF Output Power: +12dBm
+  Detection Range: 0.15m to 10m
+  Range Resolution: <15cm
+  Velocity Range: ±8.1 m/s
+  Velocity Resolution: <0.2 m/s
+  Update Rate: up to 100Hz
+  Interface: SPI (up to 50MHz)
+  Operating Voltage: 3.3V
+  Operating Current: 85mA (active)
+  Package: VQFN-28
+  ```
+
+**REQ-HW-006: Environmental Sensors**
+
+**Temperature Sensors:**
+- **Primary**: DS18B20 Digital Temperature Sensor
+  ```
+  Part Number: DS18B20+
+  Temperature Range: -55°C to +125°C
+  Accuracy: ±0.5°C (-10°C to +85°C)
+  Resolution: 9 to 12 bits (user-selectable)
+  Interface: 1-Wire digital interface
+  Operating Voltage: 3.0V to 5.5V
+  Package: TO-92, 8-pin SOIC, or μSOP-8
+  ```
+
+- **Secondary**: SHT40 Temperature/Humidity Sensor
+  ```
+  Part Number: SHT40-AD1B
+  Temperature Range: -40°C to +125°C
+  Temperature Accuracy: ±0.2°C (typical)
+  Humidity Range: 0% to 100% RH
+  Humidity Accuracy: ±1.8% RH (typical)
+  Interface: I2C
+  Operating Voltage: 1.08V to 3.6V
+  Response Time: <1s (tau63%)
+  ```
+
+**CO₂ Sensors:**
+- **Component**: Sensirion SCD40 CO₂ Sensor
+- **Part Number**: SCD40-D-R2
+- **Specifications**:
+  ```
+  Measurement Range: 0 to 40,000 ppm
+  Accuracy: ±(50 ppm + 5% of reading)
+  Repeatability: 10 ppm
+  Response Time: 60s
+  Interface: I2C
+  Operating Voltage: 2.4V to 5.5V
+  Operating Current: <18mA (average)
+  Dimensions: 10.1×10.1×6.5mm
+  ```
+
+**REQ-HW-007: Audio Processing System**
+
+**Microphone Array:**
+- **Component**: INMP441 MEMS Microphone
+- **Part Number**: INMP441
+- **Quantity**: 4 units (for spatial audio)
+- **Specifications**:
+  ```
+  Acoustic Overload Point: 120 dB SPL
+  Signal-to-Noise Ratio: 61 dB
+  Sensitivity: -26 dBFS
+  Frequency Response: 60Hz to 15kHz
+  Interface: I2S digital output
+  Operating Voltage: 1.8V to 3.3V
+  Operating Current: 1.4mA
+  Package: 4.72×3.76×1.0mm surface mount
+  ```
+
+**Audio Processing DSP:**
+- **Component**: TAS5825M Audio DSP
+- **Part Number**: TAS5825MRHBR
+- **Features**: 
+  - Integrated 48-bit data path DSP
+  - Advanced speaker protection algorithms
+  - Dynamic range compression
+  - Multi-band DRC and EQ
+
+### 2.3 Door Status Monitoring
+
+**REQ-HW-008: Magnetic Door Sensors**
+- **Primary**: MC-38 Magnetic Door Sensor
+  ```
+  Part Number: MC-38
+  Contact Type: Normally Open (NO)
+  Contact Rating: 200V DC, 0.5A
+  Gap Distance: 20mm maximum
+  Operating Temperature: -10°C to +55°C
+  Dimensions: 54×13×12mm
+  ```
+
+- **Secondary**: Reed Switch with Strong Magnet
+  ```
+  Part Number: MK04-1-A66
+  Contact Rating: 175V DC, 0.5A
+  Switching Power: 20W maximum
+  Contact Resistance: <200mΩ
+  Gap Distance: 25mm maximum
+  ```
+
+**REQ-HW-009: Hall Effect Sensors**
+- **Component**: A3144 Hall Effect Switch
+- **Part Number**: A3144EUA-T
+- **Specifications**:
+  ```
+  Operating Voltage: 4.5V to 24V
+  Output Type: Open collector
+  Magnetic Threshold: 280G (operate), 200G (release)
+  Operating Temperature: -40°C to +85°C
+  Package: TO-92S (surface mount)
+  ```
+
+### 2.4 Communication Modules
+
+**REQ-HW-010: Cellular Communication**
+- **Component**: SIM7600G-H 4G LTE Module
+- **Part Number**: SIM7600G-H
+- **Specifications**:
+  ```
+  Network Standards: LTE-FDD, LTE-TDD, WCDMA, GSM/GPRS/EDGE
+  Frequency Bands:
+    - LTE-FDD: B1/B2/B3/B4/B5/B7/B8/B12/B13/B18/B19/B20/B25/B26/B28
+    - LTE-TDD: B38/B39/B40/B41
+    - WCDMA: B1/B2/B4/B5/B8
+    - GSM: 850/900/1800/1900MHz
+  Data Speed: 150Mbps (DL) / 50Mbps (UL)
+  Interface: USB 2.0, UART, I2C, SPI
+  Operating Voltage: 3.4V to 4.2V
+  Operating Temperature: -30°C to +75°C
+  Dimensions: 30×24×2.6mm
+  ```
+
+**REQ-HW-011: WiFi Enhancement (Optional)**
+- **Component**: ESP32-WROOM-32E WiFi Module
+- **Part Number**: ESP32-WROOM-32E
+- **Purpose**: Backup WiFi and local processing
+- **Specifications**:
+  ```
+  WiFi: 802.11 b/g/n (2.4GHz)
+  Bluetooth: v4.2 BR/EDR and BLE
+  Processor: Dual-core Tensilica Xtensa LX6
+  Memory: 520KB SRAM, 4MB Flash
+  GPIO: 34 programmable pins
+  Operating Voltage: 2.2V to 3.6V
+  ```
+
+### 2.5 Power Management System
+
+**REQ-HW-012: Primary Power Supply (Cost-Optimized)**
+- **Component**: Mean Well LRS-50-12 (Indoor Use)
+- **Part Number**: LRS-50-12
+- **Cost Optimization**: ₹1,570 savings vs 60W enclosed variant
+- **Specifications**:
+  ```
+  Input Voltage: 85-264V AC
+  Output Voltage: 12V DC
+  Output Current: 4.2A maximum
+  Output Power: 50W (adequate for system requirements)
+  Efficiency: >89%
+  Protection: OVP, OCP, SCP
+  Operating Temperature: -30°C to +70°C
+  Form Factor: Open frame (for indoor use)
+  ```
+- **Note**: For outdoor/vehicle use, upgrade to GST60A12-P1J enclosed variant
+
+**REQ-HW-013: Battery Backup System (Cost-Optimized)**
+- **Component**: Panasonic NCR18650PF Li-ion Battery
+- **Part Number**: NCR18650PF
+- **Configuration**: 3S2P (11.1V, 5200mAh)
+- **Cost Optimization**: ₹750 savings while maintaining >24h runtime
+- **Specifications**:
+  ```
+  Nominal Voltage: 3.7V per cell
+  Nominal Capacity: 2600mAh per cell (25% less than premium variant)
+  Maximum Discharge Current: 10A (continuous)
+  Cycle Life: >500 cycles (80% capacity retention)
+  Operating Temperature: -20°C to +60°C (discharge)
+  Safety Features: Built-in protection circuit
+  Runtime: >24 hours (meets requirement)
+  ```
+
+**Battery Management System:**
+- **Component**: BQ76940 3-5 Cell Battery Monitor
+- **Part Number**: BQ76940RGER
+- **Features**:
+  - Individual cell voltage monitoring
+  - Over-voltage and under-voltage protection
+  - Over-current protection
+  - Temperature monitoring
+  - Cell balancing capability
+
+**REQ-HW-014: DC-DC Converters**
+- **5V Rail**: TPS54531 Step-Down Converter
+  ```
+  Part Number: TPS54531DDAR
+  Input Voltage: 3.5V to 28V
+  Output Voltage: 0.8V to 25V (adjustable)
+  Output Current: 5A maximum
+  Efficiency: >90%
+  Switching Frequency: 570kHz
+  ```
+
+- **3.3V Rail**: AMS1117-3.3 Linear Regulator
+  ```
+  Part Number: AMS1117-3.3
+  Input Voltage: 4.75V to 15V
+  Output Voltage: 3.3V ±1%
+  Output Current: 1A maximum
+  Dropout Voltage: 1.3V (typical)
+  ```
+
+### 2.6 Interface and Control Components
+
+**REQ-HW-015: GPIO Expansion**
+- **Component**: MCP23017 I/O Expander
+- **Part Number**: MCP23017-E/SP
+- **Specifications**:
+  ```
+  I/O Pins: 16 bidirectional pins
+  Interface: I2C (up to 1.7MHz)
+  Operating Voltage: 1.8V to 5.5V
+  Operating Current: 1μA (typical)
+  Interrupt Capability: 2 interrupt pins
+  Package: 28-pin SPDIP, SOIC, SSOP
+  ```
+
+**REQ-HW-016: Analog-to-Digital Converter**
+- **Component**: ADS1115 16-Bit ADC
+- **Part Number**: ADS1115IDGSR
+- **Specifications**:
+  ```
+  Resolution: 16 bits
+  Sample Rate: 8 to 860 SPS
+  Input Channels: 4 single-ended or 2 differential
+  PGA: ±256mV to ±6.144V
+  Interface: I2C
+  Operating Voltage: 2.0V to 5.5V
+  Package: MSOP-10
+  ```
+
+**REQ-HW-017: PWM Controller**
+- **Component**: PCA9685 16-Channel PWM Controller
+- **Part Number**: PCA9685PW
+- **Specifications**:
+  ```
+  Channels: 16 PWM outputs
+  Resolution: 12-bit (4096 steps)
+  PWM Frequency: 40Hz to 1000Hz
+  Interface: I2C (up to 1MHz)
+  Operating Voltage: 2.3V to 5.5V
+  Package: TSSOP-28
+  ```
+
+**REQ-HW-018: Status Display**
+- **Component**: SSD1306 OLED Display
+- **Part Number**: SSD1306-128x64
+- **Specifications**:
+  ```
+  Resolution: 128×64 pixels
+  Display Size: 0.96 inches
+  Colors: Monochrome (white)
+  Interface: I2C or SPI
+  Operating Voltage: 3.3V to 5V
+  Viewing Angle: >160°
+  Operating Temperature: -40°C to +70°C
+  ```
+
+**REQ-HW-019: Real-Time Clock**
+- **Component**: DS3231 RTC Module
+- **Part Number**: DS3231SN
+- **Specifications**:
+  ```
+  Accuracy: ±2ppm (0°C to +40°C)
+  Interface: I2C
+  Operating Voltage: 2.3V to 5.5V
+  Backup Battery: CR2032 (included)
+  Temperature Sensor: ±3°C accuracy
+  Package: 16-pin SOIC
+  ```
+
+**REQ-HW-020: Security Module**
+- **Component**: Infineon SLB9670 TPM 2.0
+- **Part Number**: SLB9670VQ2.0
+- **Specifications**:
+  ```
+  Standard: TPM 2.0 (ISO/IEC 11889)
+  Interface: SPI (up to 43MHz)
+  Cryptographic Algorithms: RSA, ECC, SHA, AES
+  Key Storage: Non-volatile memory
+  Operating Voltage: 1.62V to 3.6V
+  Operating Temperature: -40°C to +85°C
+  Package: USON-8
+  ```
+
+---
+
+## 3. Software Architecture & Requirements
+
+### 3.1 Operating System and Base Platform
+
+**REQ-SW-001: Operating System**
+- **Base OS**: Raspberry Pi OS (64-bit)
+- **Version**: Based on Debian 12 (Bookworm)
+- **Kernel**: Linux 6.1+ with real-time patches
+- **Boot Configuration**:
+  ```bash
+  # /boot/config.txt optimizations
+  # GPU memory split
+  gpu_mem=256
+  
+  # Enable hardware interfaces
+  dtparam=i2c_arm=on
+  dtparam=spi=on
+  dtparam=i2s=on
+  
+  # Performance optimizations
+  arm_freq=2400
+  over_voltage=6
+  
+  # Disable unnecessary features
+  dtoverlay=disable-wifi  # If using wired connection only
+  dtoverlay=disable-bt    # If Bluetooth not needed
+  
+  # Real-time optimizations
+  isolcpus=3              # Isolate CPU core 3 for real-time tasks
+  rcu_nocbs=3
+  irqaffinity=0,1,2
+  ```
+
+**System Optimization Script**:
+```bash
+#!/bin/bash
+# System optimization for real-time performance
+
+# Disable swap for real-time performance
+sudo dphys-swapfile swapoff
+sudo dphys-swapfile uninstall
+sudo systemctl disable dphys-swapfile
+
+# Set up real-time scheduling
+echo '@realtime - rtprio 99' | sudo tee -a /etc/security/limits.conf
+echo '@realtime - memlock unlimited' | sudo tee -a /etc/security/limits.conf
+
+# Optimize networking
+echo 'net.core.rmem_max = 134217728' | sudo tee -a /etc/sysctl.conf
+echo 'net.core.wmem_max = 134217728' | sudo tee -a /etc/sysctl.conf
+echo 'net.ipv4.tcp_rmem = 4096 87380 134217728' | sudo tee -a /etc/sysctl.conf
+echo 'net.ipv4.tcp_wmem = 4096 65536 134217728' | sudo tee -a /etc/sysctl.conf
+
+# Disable unnecessary services
+sudo systemctl disable cups
+sudo systemctl disable triggerhappy
+sudo systemctl disable hciuart
+sudo systemctl disable bluetooth
+```
+
+### 3.2 Core Software Stack
+
+**REQ-SW-002: Programming Languages and Frameworks**
+
+**Primary Development Stack**:
+```python
+# Python Dependencies (requirements.txt)
+# Core framework
+numpy==1.24.3              # Numerical computing
+scipy==1.11.1              # Scientific computing
+pandas==2.0.3              # Data manipulation
+scikit-learn==1.3.0        # Machine learning
+
+# AI/ML frameworks
+torch==2.0.1               # PyTorch for neural networks
+torchvision==0.15.2        # Computer vision
+onnx==1.14.0               # Model interchange
+onnxruntime==1.15.1        # ONNX inference
+
+# Sensor and hardware interfaces
+RPi.GPIO==0.7.1            # GPIO control
+adafruit-circuitpython-gpio==1.1.7
+adafruit-circuitpython-mcp230xx==2.5.9
+w1thermsensor==2.0.0       # 1-Wire temperature sensors
+board==1.0                 # Hardware abstraction
+
+# Communication
+paho-mqtt==1.6.1           # MQTT client
+requests==2.31.0           # HTTP client
+websockets==11.0.3         # WebSocket support
+pyserial==3.5              # Serial communication
+
+# Database and caching
+sqlite3                    # Built-in SQLite
+redis==4.6.0               # Redis client
+influxdb-client==1.37.0    # InfluxDB client
+
+# Web framework
+fastapi==0.100.0           # Modern web framework
+uvicorn==0.22.0            # ASGI server
+websockets==11.0.3         # WebSocket support
+
+# Security
+cryptography==41.0.2       # Cryptographic recipes
+PyJWT==2.8.0               # JSON Web Tokens
+bcrypt==4.0.1              # Password hashing
+
+# Utilities
+python-dotenv==1.0.0       # Environment variables
+schedule==1.2.0            # Task scheduling
+psutil==5.9.5              # System monitoring
+```
+
+**Node.js Components** (for real-time features):
+```json
+{
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "mqtt": "^5.0.0",
+    "redis": "^4.6.7",
+    "jsonwebtoken": "^9.0.1",
+    "bcryptjs": "^2.4.3",
+    "helmet": "^7.0.0",
+    "cors": "^2.8.5",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0",
+    "dotenv": "^16.3.1",
+    "node-cron": "^3.0.2",
+    "nodemailer": "^6.9.4",
+    "twilio": "^4.14.0"
+  }
+}
+```
+
+### 3.3 AI/ML Processing Engine
+
+**REQ-SW-003: Machine Learning Pipeline**
+
+**Sensor Fusion Algorithm**:
+```python
+import torch
+import torch.nn as nn
+import numpy as np
+from typing import Dict, List, Tuple, Optional
+from dataclasses import dataclass
+from enum import Enum
+
+@dataclass
+class SensorReading:
+    """Standardized sensor reading structure"""
+    sensor_id: str
+    sensor_type: str
+    value: float
+    confidence: float
+    timestamp: float
+    metadata: Dict
+
+class RiskLevel(Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+class SensorFusionEngine:
+    """Advanced sensor fusion using Kalman filtering and ML"""
+    
+    def __init__(self):
+        self.kalman_filters = {}
+        self.sensor_weights = {
+            'pir': 0.25,
+            'thermal': 0.30,
+            'radar': 0.25,
+            'audio': 0.20
+        }
+        self.confidence_threshold = 0.8
+        
+    def fuse_sensor_data(self, sensor_readings: List[SensorReading]) -> Dict:
+        """Fuse multiple sensor readings into unified state estimate"""
+        
+        # Group readings by sensor type
+        grouped_readings = self._group_by_sensor_type(sensor_readings)
+        
+        # Apply Kalman filtering to each sensor type
+        filtered_readings = {}
+        for sensor_type, readings in grouped_readings.items():
+            filtered_readings[sensor_type] = self._apply_kalman_filter(
+                sensor_type, readings
+            )
+        
+        # Weighted fusion
+        fused_state = self._weighted_fusion(filtered_readings)
+        
+        # Confidence calculation
+        overall_confidence = self._calculate_confidence(filtered_readings)
+        
+        return {
+            'occupancy_detected': fused_state['occupancy'] > 0.5,
+            'occupancy_confidence': fused_state['occupancy'],
+            'movement_detected': fused_state['movement'] > 0.3,
+            'distress_detected': fused_state['distress'] > 0.7,
+            'overall_confidence': overall_confidence,
+            'sensor_health': self._check_sensor_health(sensor_readings),
+            'timestamp': max(r.timestamp for r in sensor_readings)
+        }
+    
+    def _apply_kalman_filter(self, sensor_type: str, readings: List[SensorReading]):
+        """Apply Kalman filtering for sensor type"""
+        if sensor_type not in self.kalman_filters:
+            self.kalman_filters[sensor_type] = self._init_kalman_filter(sensor_type)
+        
+        kf = self.kalman_filters[sensor_type]
+        
+        # Process readings through Kalman filter
+        for reading in readings:
+            measurement = np.array([reading.value])
+            kf.predict()
+            kf.update(measurement, R=1.0 / reading.confidence)
+        
+        return {
+            'filtered_value': kf.x[0],
+            'variance': kf.P[0, 0],
+            'innovation': kf.y[0] if hasattr(kf, 'y') else 0
+        }
+
+class LSTMRiskAssessment(nn.Module):
+    """LSTM neural network for time-series risk assessment"""
+    
+    def __init__(self, input_size=12, hidden_size=64, num_layers=2, output_size=4):
+        super(LSTMRiskAssessment, self).__init__()
+        
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        
+        # LSTM layers
+        self.lstm = nn.LSTM(
+            input_size=input_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=0.2
+        )
+        
+        # Attention mechanism
+        self.attention = nn.MultiheadAttention(
+            embed_dim=hidden_size,
+            num_heads=8,
+            dropout=0.1
+        )
+        
+        # Classification layers
+        self.classifier = nn.Sequential(
+            nn.Linear(hidden_size, 32),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(32, 16),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(16, output_size),
+            nn.Softmax(dim=1)
+        )
+        
+    def forward(self, x):
+        # LSTM forward pass
+        lstm_out, (hidden, cell) = self.lstm(x)
+        
+        # Apply attention
+        attended_out, attention_weights = self.attention(
+            lstm_out, lstm_out, lstm_out
+        )
+        
+        # Use the last output for classification
+        final_output = attended_out[:, -1, :]
+        
+        # Classification
+        risk_probabilities = self.classifier(final_output)
+        
+        return risk_probabilities, attention_weights
+
+class RandomForestRiskClassifier:
+    """Random Forest for real-time risk classification"""
+    
+    def __init__(self):
+        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.preprocessing import StandardScaler
+        
+        self.rf_model = RandomForestClassifier(
+            n_estimators=100,
+            max_depth=10,
+            min_samples_split=5,
+            min_samples_leaf=2,
+            random_state=42
+        )
+        self.scaler = StandardScaler()
+        self.is_trained = False
+        
+    def extract_features(self, sensor_data: Dict) -> np.ndarray:
+        """Extract features from sensor fusion data"""
+        features = [
+            sensor_data.get('occupancy_confidence', 0),
+            sensor_data.get('movement_detected', 0),
+            sensor_data.get('distress_detected', 0),
+            sensor_data.get('temperature', 20),
+            sensor_data.get('co2_level', 400),
+            sensor_data.get('humidity', 50),
+            sensor_data.get('sound_level', 30),
+            sensor_data.get('door_closed', 0),
+            sensor_data.get('time_since_movement', 0),
+            sensor_data.get('time_since_sound', 0),
+            sensor_data.get('environmental_stress', 0),
+            sensor_data.get('overall_confidence', 0)
+        ]
+        return np.array(features).reshape(1, -1)
+    
+    def predict_risk(self, sensor_data: Dict) -> Tuple[RiskLevel, float]:
+        """Predict risk level and confidence"""
+        if not self.is_trained:
+            # Load pre-trained model or use default thresholds
+            return self._threshold_based_prediction(sensor_data)
+        
+        features = self.extract_features(sensor_data)
+        features_scaled = self.scaler.transform(features)
+        
+        # Get prediction and probabilities
+        risk_class = self.rf_model.predict(features_scaled)[0]
+        risk_proba = self.rf_model.predict_proba(features_scaled)[0]
+        
+        risk_levels = [RiskLevel.LOW, RiskLevel.MEDIUM, RiskLevel.HIGH, RiskLevel.CRITICAL]
+        predicted_risk = risk_levels[risk_class]
+        confidence = np.max(risk_proba)
+        
+        return predicted_risk, confidence
+
+class EnsembleRiskAssessment:
+    """Ensemble model combining LSTM and Random Forest"""
+    
+    def __init__(self):
+        self.lstm_model = LSTMRiskAssessment()
+        self.rf_model = RandomForestRiskClassifier()
+        self.fusion_engine = SensorFusionEngine()
+        
+        # Load pre-trained weights if available
+        self._load_models()
+        
+    def assess_risk(self, sensor_readings: List[SensorReading]) -> Dict:
+        """Complete risk assessment pipeline"""
+        
+        # Step 1: Sensor fusion
+        fused_data = self.fusion_engine.fuse_sensor_data(sensor_readings)
+        
+        # Step 2: LSTM prediction (for time-series patterns)
+        lstm_risk, attention_weights = self._lstm_prediction(sensor_readings)
+        
+        # Step 3: Random Forest prediction (for real-time classification)
+        rf_risk, rf_confidence = self.rf_model.predict_risk(fused_data)
+        
+        # Step 4: Ensemble fusion
+        final_risk, final_confidence = self._ensemble_fusion(
+            lstm_risk, rf_risk, rf_confidence, fused_data['overall_confidence']
+        )
+        
+        # Step 5: Generate explanation
+        explanation = self._generate_explanation(
+            fused_data, lstm_risk, rf_risk, attention_weights
+        )
+        
+        return {
+            'risk_level': final_risk,
+            'risk_score': self._risk_level_to_score(final_risk),
+            'confidence': final_confidence,
+            'contributing_factors': explanation['factors'],
+            'sensor_data': fused_data,
+            'lstm_attention': attention_weights.tolist() if attention_weights is not None else None,
+            'explanation': explanation['text'],
+            'recommendations': self._generate_recommendations(final_risk, fused_data),
+            'timestamp': fused_data['timestamp']
+        }
+    
+    def _ensemble_fusion(self, lstm_risk, rf_risk, rf_confidence, sensor_confidence):
+        """Fuse LSTM and Random Forest predictions"""
+        
+        # Weight the models based on confidence and historical performance
+        lstm_weight = 0.6
+        rf_weight = 0.4
+        
+        # Adjust weights based on sensor confidence
+        if sensor_confidence < 0.7:
+            lstm_weight = 0.4
+            rf_weight = 0.6
+        
+        # Combine risk levels (convert to numeric for fusion)
+        risk_to_numeric = {
+            RiskLevel.LOW: 0,
+            RiskLevel.MEDIUM: 1,
+            RiskLevel.HIGH: 2,
+            RiskLevel.CRITICAL: 3
+        }
+        
+        numeric_to_risk = [RiskLevel.LOW, RiskLevel.MEDIUM, RiskLevel.HIGH, RiskLevel.CRITICAL]
+        
+        lstm_numeric = risk_to_numeric[lstm_risk]
+        rf_numeric = risk_to_numeric[rf_risk]
+        
+        # Weighted average
+        fused_numeric = lstm_weight * lstm_numeric + rf_weight * rf_numeric
+        
+        # Convert back to risk level
+        final_risk = numeric_to_risk[int(round(fused_numeric))]
+        
+        # Calculate ensemble confidence
+        final_confidence = min(
+            lstm_weight * 0.8 + rf_weight * rf_confidence,  # Assume LSTM confidence of 0.8
+            sensor_confidence
+        )
+        
+        return final_risk, final_confidence
+```
+
+### 3.4 Communication and Networking
+
+**REQ-SW-004: Communication Manager**
+
+**MQTT Integration**:
+```python
+import paho.mqtt.client as mqtt
+import json
+import ssl
+import time
+from typing import Dict, Callable, Optional
+from dataclasses import dataclass
+from threading import Thread, Lock
+import logging
+
+@dataclass
+class MQTTConfig:
+    broker_host: str
+    broker_port: int = 8883
+    username: Optional[str] = None
+    password: Optional[str] = None
+    use_tls: bool = True
+    ca_cert_path: Optional[str] = None
+    cert_path: Optional[str] = None
+    key_path: Optional[str] = None
+    keepalive: int = 60
+    client_id: Optional[str] = None
+
+class MQTTCommunicationManager:
+    """Robust MQTT communication manager with failover"""
+    
+    def __init__(self, config: MQTTConfig):
+        self.config = config
+        self.client = None
+        self.is_connected = False
+        self.message_handlers = {}
+        self.connection_lock = Lock()
+        self.reconnect_thread = None
+        self.logger = logging.getLogger(__name__)
+        
+        self._setup_client()
+        
+    def _setup_client(self):
+        """Setup MQTT client with security configuration"""
+        client_id = self.config.client_id or f"safety_monitor_{int(time.time())}"
+        self.client = mqtt.Client(client_id=client_id, protocol=mqtt.MQTTv311)
+        
+        # Authentication
+        if self.config.username and self.config.password:
+            self.client.username_pw_set(self.config.username, self.config.password)
+        
+        # TLS/SSL Configuration
+        if self.config.use_tls:
+            context = ssl.create_default_context()
+            
+            if self.config.ca_cert_path:
+                context.load_verify_locations(self.config.ca_cert_path)
+            
+            if self.config.cert_path and self.config.key_path:
+                context.load_cert_chain(self.config.cert_path, self.config.key_path)
+            
+            self.client.tls_set_context(context)
+        
+        # Callbacks
+        self.client.on_connect = self._on_connect
+        self.client.on_disconnect = self._on_disconnect
+        self.client.on_message = self._on_message
+        self.client.on_publish = self._on_publish
+        
+    def connect(self) -> bool:
+        """Connect to MQTT broker with retry logic"""
+        with self.connection_lock:
+            try:
+                self.client.connect(
+                    self.config.broker_host,
+                    self.config.broker_port,
+                    self.config.keepalive
+                )
+                self.client.loop_start()
+                return True
+            except Exception as e:
+                self.logger.error(f"MQTT connection failed: {e}")
+                return False
+    
+    def publish_sensor_data(self, device_id: str, sensor_data: Dict) -> bool:
+        """Publish sensor data with QoS 1"""
+        topic = f"devices/{device_id}/sensors/data"
+        
+        payload = {
+            'device_id': device_id,
+            'timestamp': time.time(),
+            'data': sensor_data
+        }
+        
+        return self._publish_with_retry(topic, payload, qos=1)
+    
+    def publish_alert(self, device_id: str, alert_data: Dict) -> bool:
+        """Publish alert with QoS 2 (exactly once delivery)"""
+        topic = f"devices/{device_id}/alerts"
+        
+        payload = {
+            'device_id': device_id,
+            'alert_id': alert_data.get('alert_id'),
+            'timestamp': time.time(),
+            'alert': alert_data
+        }
+        
+        return self._publish_with_retry(topic, payload, qos=2)
+    
+    def _publish_with_retry(self, topic: str, payload: Dict, qos: int = 1, retries: int = 3) -> bool:
+        """Publish message with retry logic"""
+        for attempt in range(retries):
+            try:
+                if not self.is_connected:
+                    if not self.connect():
+                        continue
+                
+                result = self.client.publish(
+                    topic,
+                    json.dumps(payload),
+                    qos=qos,
+                    retain=False
+                )
+                
+                if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                    return True
+                else:
+                    self.logger.warning(f"Publish failed, attempt {attempt + 1}: {result.rc}")
+                    
+            except Exception as e:
+                self.logger.error(f"Publish error, attempt {attempt + 1}: {e}")
+            
+            time.sleep(2 ** attempt)  # Exponential backoff
+        
+        return False
+```
+
+**RESTful API Server**:
+```python
+from fastapi import FastAPI, HTTPException, Depends, Security
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
+import uvicorn
+import jwt
+import time
+from datetime import datetime, timedelta
+
+app = FastAPI(
+    title="AI Safety Monitor API",
+    description="RESTful API for AI-based caregiver alert system",
+    version="1.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc"
+)
+
+# Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Security
+security = HTTPBearer()
+JWT_SECRET = "your-secret-key"  # Load from environment
+JWT_ALGORITHM = "HS256"
+
+# Data Models
+class SensorDataModel(BaseModel):
+    sensor_id: str = Field(..., description="Unique sensor identifier")
+    sensor_type: str = Field(..., description="Type of sensor (pir, thermal, etc.)")
+    value: float = Field(..., description="Sensor reading value")
+    confidence: float = Field(ge=0, le=1, description="Reading confidence score")
+    timestamp: Optional[float] = Field(None, description="Timestamp (Unix epoch)")
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+class AlertModel(BaseModel):
+    alert_id: str
+    device_id: str
+    alert_type: str
+    alert_level: str
+    message: str
+    timestamp: float
+    acknowledged: bool = False
+
+class RiskAssessmentModel(BaseModel):
+    device_id: str
+    risk_level: str
+    risk_score: float
+    confidence: float
+    contributing_factors: List[str]
+    timestamp: float
+
+# Authentication
+def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
+    try:
+        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+# API Endpoints
+@app.post("/api/v1/sensors/data")
+async def submit_sensor_data(
+    data: SensorDataModel,
+    user: dict = Depends(verify_token)
+):
+    """Submit sensor reading data"""
+    try:
+        # Process sensor data
+        result = await process_sensor_data(data)
+        return {"status": "success", "reading_id": result["id"]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/sensors/data")
+async def get_sensor_data(
+    device_id: Optional[str] = None,
+    sensor_type: Optional[str] = None,
+    start_time: Optional[float] = None,
+    end_time: Optional[float] = None,
+    limit: int = 100,
+    user: dict = Depends(verify_token)
+):
+    """Retrieve sensor data with filtering"""
+    try:
+        data = await query_sensor_data(
+            device_id=device_id,
+            sensor_type=sensor_type,
+            start_time=start_time,
+            end_time=end_time,
+            limit=limit
+        )
+        return {"data": data, "count": len(data)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/alerts")
+async def get_alerts(
+    device_id: Optional[str] = None,
+    alert_level: Optional[str] = None,
+    acknowledged: Optional[bool] = None,
+    limit: int = 50,
+    user: dict = Depends(verify_token)
+):
+    """Get alerts with filtering options"""
+    try:
+        alerts = await query_alerts(
+            device_id=device_id,
+            alert_level=alert_level,
+            acknowledged=acknowledged,
+            limit=limit
+        )
+        return {"alerts": alerts, "count": len(alerts)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/alerts/{alert_id}/acknowledge")
+async def acknowledge_alert(
+    alert_id: str,
+    user: dict = Depends(verify_token)
+):
+    """Acknowledge an alert"""
+    try:
+        result = await acknowledge_alert_by_id(alert_id, user["user_id"])
+        return {"status": "success", "acknowledged_at": result["timestamp"]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/dashboard/summary")
+async def get_dashboard_summary(user: dict = Depends(verify_token)):
+    """Get dashboard summary data"""
+    try:
+        summary = await get_system_summary()
+        return summary
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    """System health check"""
+    return {
+        "status": "healthy",
+        "timestamp": time.time(),
+        "version": "1.0.0"
+    }
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8080,
+        reload=False,
+        workers=4,
+        access_log=True
+    )
+```
+
+---
+
+## 4. System Integration Requirements
+
+### 4.1 Hardware-Software Integration Architecture
+
+**REQ-INT-001: System Integration Framework**
+
+The system integration follows a layered approach ensuring seamless communication between hardware components and software services.
+
+**Device Driver Implementation Framework**:
+```python
+from abc import ABC, abstractmethod
+from typing import Dict, Any, Optional, List
+from dataclasses import dataclass
+import threading
+import time
+import logging
+
+@dataclass
+class HardwareInterface:
+    """Hardware interface configuration"""
+    interface_type: str  # 'gpio', 'i2c', 'spi', 'uart'
+    pins: List[int]
+    configuration: Dict[str, Any]
+    
+class SensorDriver(ABC):
+    """Abstract base class for all sensor drivers"""
+    
+    def __init__(self, interface: HardwareInterface, device_config: Dict[str, Any]):
+        self.interface = interface
+        self.config = device_config
+        self.is_initialized = False
+        self.logger = logging.getLogger(f"{self.__class__.__name__}")
+        self.lock = threading.Lock()
+        
+    @abstractmethod
+    def initialize(self) -> bool:
+        """Initialize the sensor hardware"""
+        pass
+    
+    @abstractmethod
+    def read_data(self) -> Dict[str, Any]:
+        """Read data from the sensor"""
+        pass
+    
+    @abstractmethod
+    def calibrate(self) -> bool:
+        """Calibrate the sensor"""
+        pass
+    
+    @abstractmethod
+    def self_test(self) -> bool:
+        """Perform sensor self-test"""
+        pass
+```
+
+### 4.2 Communication Bus Integration
+
+**REQ-INT-002: I2C Bus Configuration**
+```python
+# I2C Bus Configuration
+I2C_DEVICES = {
+    0x33: {
+        'device': 'MLX90640 Thermal Camera',
+        'driver': 'ThermalCameraDriver',
+        'bus_speed': 1000000,  # 1MHz
+        'priority': 'high'
+    },
+    0x48: {
+        'device': 'ADS1115 ADC',
+        'driver': 'ADCDriver', 
+        'bus_speed': 400000,   # 400kHz
+        'priority': 'medium'
+    },
+    0x62: {
+        'device': 'SCD40 CO2 Sensor',
+        'driver': 'CO2SensorDriver',
+        'bus_speed': 100000,   # 100kHz
+        'priority': 'medium'
+    },
+    0x44: {
+        'device': 'SHT40 Temp/Humidity',
+        'driver': 'SHT40Driver',
+        'bus_speed': 400000,   # 400kHz
+        'priority': 'low'
+    },
+    0x68: {
+        'device': 'DS3231 RTC',
+        'driver': 'RTCDriver',
+        'bus_speed': 100000,   # 100kHz
+        'priority': 'low'
+    }
+}
+
+# GPIO Pin Assignments
+GPIO_ASSIGNMENTS = {
+    'pir_sensors': [17, 18, 19, 20],
+    'magnetic_sensors': [21, 22, 23, 24],
+    'hall_sensors': [25, 26, 27],
+    'status_leds': [5, 6, 13],
+    'emergency_button': 16,
+    'system_reset': 12,
+    'power_control': [7, 8]
+}
+```
+
+---
+
+## 5. Power Management System
+
+### 5.1 Power Distribution Architecture
+
+**REQ-PWR-001: Power System Design**
+
+The power management system ensures reliable operation with seamless failover to battery backup during power outages.
+
+### 5.1.1 Complete Power Distribution Diagram
+
+**System Power Flow Architecture:**
+
+```mermaid
+flowchart TD
+    subgraph "Primary Power Input"
+        AC_INPUT["AC Input\n85-264V AC"]
+        AC_FILTER["EMI Filter\nLine conditioning"]
+        AC_FUSE["Fuse Protection\n2A slow blow"]
+        AC_SWITCH["Power Switch\nOn/Off control"]
+    end
+
+    subgraph "Primary Power Supply"
+        PSU["Mean Well LRS-50-12\n12V 4.2A Output"]
+        PSU_FILT["Output Filter\nRipple reduction"]
+        PSU_SENSE["Voltage Sensing\nFeedback control"]
+        PSU_PROT["Protection Circuit\nOVP/OCP/SCP"]
+    end
+
+    subgraph "Power Distribution Hub"
+        MAIN_12V["Main 12V Rail\n4.2A Max"]
+        PWR_MONITOR["Power Monitor\nINA219"]
+        PWR_SWITCH["Power Switch\nMOSFET control"]
+        DIST_FUSE["Distribution Fuses\nIndividual protection"]
+    end
+
+    subgraph "DC-DC Converters"
+        CONV_5V["5V Converter\nTPS54531 - 5A"]
+        CONV_3V3["3.3V Converter\nAMS1117 - 1A"]
+        CONV_1V8["1.8V Converter\nLM1117 - 800mA"]
+        CONV_EFF["Efficiency Monitor\nPower optimization"]
+    end
+
+    subgraph "Battery System"
+        BATTERY_PACK["Battery Pack\n3S2P NCR18650PF\n11.1V 5200mAh"]
+        BMS["Battery Management\nBQ76940"]
+        CHARGING["Charging Circuit\nTP4056 based"]
+        BAT_MONITOR["Battery Monitor\nVoltage / Current / Temp"]
+    end
+
+    subgraph "Power Rails"
+        RAIL_12V["12V Rail\nMain system power"]
+        RAIL_5V["5V Rail\nPi + peripherals"]
+        RAIL_3V3["3.3V Rail\nSensors + logic"]
+        RAIL_1V8["1.8V Rail\nLow power devices"]
+    end
+
+    subgraph "Load Distribution"
+        subgraph "High Power Loads (12V)"
+            PI_PWR["Pi Power\nUSB-C 5V 3A"]
+            GSM_PWR["GSM Module\n3.3V 2A peak"]
+            AUDIO_PWR["Audio System\n5V 0.5A"]
+        end
+
+        subgraph "Medium Power Loads (5V)"
+            STORAGE_PWR["Storage\nNVMe SSD"]
+            DISPLAY_PWR["Display\nOLED status"]
+            COOLING_PWR["Cooling\nFan control"]
+        end
+
+        subgraph "Low Power Loads (3.3V)"
+            SENSOR_PWR["Sensor Array\nMulti-sensor power"]
+            COMM_PWR["Communication\nWiFi / Bluetooth"]
+            GPIO_PWR["GPIO Expansion\nI/O circuits"]
+        end
+
+        subgraph "Ultra Low Power (1.8V)"
+            RTC_PWR["RTC Power\nDS3231"]
+            SECURITY_PWR["Security Chip\nATECC608B"]
+            BACKUP_PWR["Backup Systems\nCritical functions"]
+        end
+    end
+
+    subgraph "Power Control & Monitoring"
+        PWR_CTRL["Power Controller\nSystem management"]
+        UPS_CTRL["UPS Controller\nBackup switching"]
+        LOAD_CTRL["Load Controller\nPriority switching"]
+        WAKE_CTRL["Wake Controller\nSystem startup"]
+    end
+
+    %% Primary power flow
+    AC_INPUT --> AC_FILTER
+    AC_FILTER --> AC_FUSE
+    AC_FUSE --> AC_SWITCH
+    AC_SWITCH --> PSU
+
+    PSU --> PSU_FILT
+    PSU_FILT --> PSU_SENSE
+    PSU_SENSE --> PSU_PROT
+    PSU_PROT --> MAIN_12V
+
+    %% Power distribution
+    MAIN_12V --> PWR_MONITOR
+    PWR_MONITOR --> PWR_SWITCH
+    PWR_SWITCH --> DIST_FUSE
+    DIST_FUSE --> RAIL_12V
+
+    %% DC-DC conversion
+    RAIL_12V --> CONV_5V
+    RAIL_12V --> CONV_3V3
+    RAIL_12V --> CONV_1V8
+
+    CONV_5V --> RAIL_5V
+    CONV_3V3 --> RAIL_3V3
+    CONV_1V8 --> RAIL_1V8
+
+    %% Battery system
+    RAIL_12V --> CHARGING
+    CHARGING --> BATTERY_PACK
+    BATTERY_PACK --> BMS
+    BMS --> BAT_MONITOR
+    BATTERY_PACK --> UPS_CTRL
+
+    %% Load connections
+    RAIL_12V --> PI_PWR
+    RAIL_12V --> GSM_PWR
+    RAIL_5V --> AUDIO_PWR
+    RAIL_5V --> STORAGE_PWR
+    RAIL_5V --> DISPLAY_PWR
+    RAIL_5V --> COOLING_PWR
+    RAIL_3V3 --> SENSOR_PWR
+    RAIL_3V3 --> COMM_PWR
+    RAIL_3V3 --> GPIO_PWR
+    RAIL_1V8 --> RTC_PWR
+    RAIL_1V8 --> SECURITY_PWR
+    RAIL_1V8 --> BACKUP_PWR
+
+    %% Control connections
+    PWR_MONITOR --> PWR_CTRL
+    BMS --> PWR_CTRL
+    PWR_CTRL --> UPS_CTRL
+    PWR_CTRL --> LOAD_CTRL
+    PWR_CTRL --> WAKE_CTRL
+
+    %% Backup power flow
+    UPS_CTRL -.-> RAIL_12V
+    LOAD_CTRL -.-> DIST_FUSE
+    WAKE_CTRL -.-> PWR_SWITCH
+
+```
+
+### 5.1.2 Power Sequencing and Control
+
+**Power-Up Sequence Control:**
+
+```mermaid
+sequenceDiagram
+    participant AC as AC Power
+    participant PSU as Power Supply
+    participant CTRL as Power Controller
+    participant CONV as DC-DC Converters
+    participant LOADS as System Loads
+    participant BATTERY as Battery System
+    
+    Note over AC,BATTERY: System Power-Up Sequence
+    AC->>PSU: AC Power Applied
+    PSU->>CTRL: 12V Power Good
+    CTRL->>CTRL: Self-test & Initialization
+    CTRL->>CONV: Enable 5V Rail
+    CONV->>CTRL: 5V Power Good
+    CTRL->>CONV: Enable 3.3V Rail
+    CONV->>CTRL: 3.3V Power Good
+    CTRL->>CONV: Enable 1.8V Rail
+    CONV->>CTRL: 1.8V Power Good
+    CTRL->>LOADS: Enable Load Groups
+    LOADS->>CTRL: System Ready
+    CTRL->>BATTERY: Start Battery Monitoring
+    BATTERY->>CTRL: Battery Status OK
+    
+    Note over AC,BATTERY: Normal Operation
+    CTRL->>LOADS: Continuous Power
+    BATTERY->>CTRL: Battery Health Updates
+    CTRL->>BATTERY: Charging Control
+    
+    Note over AC,BATTERY: Power Failure Detection
+    AC->>PSU: AC Power Lost
+    PSU->>CTRL: Power Fail Signal
+    CTRL->>BATTERY: Switch to Battery
+    BATTERY->>LOADS: Battery Power
+    CTRL->>LOADS: Reduce Power Mode
+    LOADS->>CTRL: Acknowledge Power Reduction
+    
+    Note over AC,BATTERY: Power Restoration
+    AC->>PSU: AC Power Restored
+    PSU->>CTRL: Power Good Signal
+    CTRL->>BATTERY: Switch to AC Power
+    CTRL->>LOADS: Normal Power Mode
+    CTRL->>BATTERY: Resume Charging
+```
+
+### 5.1.3 Battery Management System
+
+**Advanced Battery Management Architecture:**
+
+```mermaid
+graph TB
+    subgraph "Battery Pack Configuration"
+        subgraph "Series String 1"
+            CELL1[Cell 1<br/>NCR18650PF<br/>3.7V 2600mAh]
+            CELL2[Cell 2<br/>NCR18650PF<br/>3.7V 2600mAh]
+            CELL3[Cell 3<br/>NCR18650PF<br/>3.7V 2600mAh]
+            CELL1 --> CELL2
+            CELL2 --> CELL3
+        end
+        
+        subgraph "Series String 2"
+            CELL4[Cell 4<br/>NCR18650PF<br/>3.7V 2600mAh]
+            CELL5[Cell 5<br/>NCR18650PF<br/>3.7V 2600mAh]
+            CELL6[Cell 6<br/>NCR18650PF<br/>3.7V 2600mAh]
+            CELL4 --> CELL5
+            CELL5 --> CELL6
+        end
+        
+        %% Parallel connection
+        CELL1 -.-> CELL4
+        CELL2 -.-> CELL5
+        CELL3 -.-> CELL6
+    end
+    
+    subgraph "Battery Management System"
+        BMS[BQ76940<br/>Battery Monitor]
+        BALANCE[Cell Balancing<br/>Passive balancing]
+        PROTECTION[Protection Circuit<br/>OVP/UVP/OCP]
+        TEMP_SENSE[Temperature Sensor<br/>NTC thermistor]
+        CURRENT_SENSE[Current Sensor<br/>Shunt resistor]
+    end
+    
+    subgraph "Charging System"
+        CHARGE_CTRL[Charge Controller<br/>CC/CV charging]
+        CHARGE_MOSFET[Charge MOSFET<br/>IRF540N]
+        CHARGE_CURRENT[Current Limit<br/>2A maximum]
+        CHARGE_VOLTAGE[Voltage Regulation<br/>12.6V cutoff]
+    end
+    
+    subgraph "Discharge System"
+        DISCHARGE_CTRL[Discharge Controller<br/>Load management]
+        DISCHARGE_MOSFET[Discharge MOSFET<br/>IRF540N]
+        LOAD_CURRENT[Current Monitor<br/>Real-time monitoring]
+        VOLTAGE_MONITOR[Voltage Monitor<br/>Under-voltage protection]
+    end
+    
+    subgraph "Safety Systems"
+        FUSE[Protection Fuse<br/>10A fast blow]
+        THERMAL_FUSE[Thermal Fuse<br/>85°C cutoff]
+        SMOKE_DETECT[Smoke Detection<br/>Safety monitoring]
+        EMERGENCY_DISC[Emergency Disconnect<br/>Manual isolation]
+    end
+    
+    %% Battery connections
+    CELL3 --> BMS
+    CELL6 --> BMS
+    BMS --> BALANCE
+    BMS --> PROTECTION
+    BMS --> TEMP_SENSE
+    BMS --> CURRENT_SENSE
+    
+    %% Charging connections
+    BMS --> CHARGE_CTRL
+    CHARGE_CTRL --> CHARGE_MOSFET
+    CHARGE_MOSFET --> CHARGE_CURRENT
+    CHARGE_CURRENT --> CHARGE_VOLTAGE
+    
+    %% Discharge connections
+    BMS --> DISCHARGE_CTRL
+    DISCHARGE_CTRL --> DISCHARGE_MOSFET
+    DISCHARGE_MOSFET --> LOAD_CURRENT
+    LOAD_CURRENT --> VOLTAGE_MONITOR
+    
+    %% Safety connections
+    CELL3 --> FUSE
+    FUSE --> THERMAL_FUSE
+    THERMAL_FUSE --> SMOKE_DETECT
+    SMOKE_DETECT --> EMERGENCY_DISC
+    
+    %% Monitoring and control
+    BMS --> PROTECTION
+    PROTECTION --> CHARGE_CTRL
+    PROTECTION --> DISCHARGE_CTRL
+    TEMP_SENSE --> PROTECTION
+    CURRENT_SENSE --> PROTECTION
+```
+
+### 5.1.4 Power Budget and Efficiency Analysis
+
+**Comprehensive Power Budget:**
+
+| Component | Voltage | Current (mA) | Power (W) | Efficiency | Notes |
+|-----------|---------|--------------|-----------|------------|-------|
+| **Raspberry Pi 5** | 5V | 3000 | 15.0 | 90% | Maximum load |
+| **NVMe SSD** | 5V | 500 | 2.5 | 95% | Read/write operations |
+| **GSM Module** | 3.3V | 2000 | 6.6 | 85% | Peak transmission |
+| **Thermal Camera** | 3.3V | 23 | 0.076 | 95% | Continuous operation |
+| **Radar Sensor** | 3.3V | 85 | 0.28 | 90% | Active sensing |
+| **PIR Sensors (4x)** | 3.3V | 0.2 | 0.0007 | 98% | Standby mode |
+| **Environmental Sensors** | 3.3V | 50 | 0.165 | 95% | Periodic reading |
+| **Audio System** | 5V | 100 | 0.5 | 85% | Processing + amplification |
+| **Display** | 3.3V | 20 | 0.066 | 90% | OLED active |
+| **Support Circuits** | Various | 200 | 1.0 | 92% | GPIO, RTC, etc. |
+
+**Power Consumption Summary:**
+- **Maximum Power**: 26.2W
+- **Normal Operation**: 18.5W
+- **Standby Mode**: 3.2W
+- **Battery Runtime**: 24+ hours (standby)
+
+### 5.1.5 Power Quality and Protection
+
+**Power Quality Standards:**
+- **Voltage Regulation**: ±2% for all rails
+- **Ripple Voltage**: <50mV peak-to-peak
+- **Load Regulation**: <1% for 0-100% load
+- **Line Regulation**: <0.5% for input voltage variation
+- **Transient Response**: <100µs recovery time
+
+**Protection Features:**
+- **Over-Voltage Protection**: 110% of nominal voltage
+- **Under-Voltage Protection**: 85% of nominal voltage
+- **Over-Current Protection**: 120% of rated current
+- **Short-Circuit Protection**: <1ms response time
+- **Thermal Protection**: 85°C junction temperature
+
+---
+
+## 6. Environmental & Mechanical Requirements
+
+### 6.1 Environmental Specifications
+
+**REQ-ENV-001: Operating Environment**
+- **Operating Temperature**: -20°C to +60°C
+- **Storage Temperature**: -40°C to +85°C
+- **Humidity Range**: 5% to 95% RH (non-condensing)
+- **Altitude**: Up to 3,000 meters
+- **Vibration Resistance**: 10G peak (automotive grade)
+- **IP Rating**: IP65 (dust and water resistant)
+- **EMC Compliance**: CE, FCC Class B
+
+### 6.2 Mechanical Design
+
+**REQ-MECH-001: Enclosure Specifications**
+- **Material**: ABS plastic with UV stabilizers
+- **Dimensions**: 200mm x 150mm x 80mm
+- **Weight**: <2kg including battery
+- **Mounting**: Universal mounting brackets
+- **Ventilation**: Passive cooling with filtered vents
+- **Access**: Tool-free maintenance access
+
+---
+
+## 7. Manufacturing & Assembly Specifications
+
+### 7.1 PCB Design Requirements
+
+**REQ-MFG-001: PCB Specifications**
+- **Board Type**: 4-layer FR-4
+- **Thickness**: 1.6mm ±0.1mm
+- **Copper Weight**: 1oz (35μm) outer layers, 0.5oz (17.5μm) inner layers
+- **Surface Finish**: HASL (Hot Air Solder Leveling)
+- **Solder Mask**: Green, matte finish
+- **Silkscreen**: White, both sides
+- **Via Type**: Through-hole and blind vias
+- **Minimum Track Width**: 0.1mm (4 mil)
+- **Minimum Via Size**: 0.2mm (8 mil)
+
+### 7.2 Assembly Process
+
+**REQ-MFG-002: Assembly Line Process**
+1. **SMT Assembly**: Surface mount components using pick-and-place
+2. **Reflow Soldering**: Lead-free solder paste, RoHS compliant
+3. **Through-hole Assembly**: Manual or selective wave soldering
+4. **Cleaning**: Ultrasonic cleaning with DI water
+5. **Testing**: In-circuit test (ICT) and functional test
+6. **Programming**: Firmware programming and configuration
+7. **Calibration**: Sensor calibration and verification
+8. **Final Assembly**: Enclosure assembly and labeling
+9. **Quality Control**: 100% functional testing
+10. **Packaging**: Anti-static packaging with documentation
+
+---
+
+## 8. Testing & Validation Procedures
+
+### 8.1 Hardware Testing
+
+**REQ-TEST-001: Component Level Testing**
+- **Incoming Inspection**: 100% visual inspection, AQL sampling
+- **In-Circuit Test**: Boundary scan and analog testing
+- **Functional Test**: Full system functionality verification
+- **Burn-in Test**: 48-hour stress testing at elevated temperature
+- **Environmental Test**: Temperature cycling, humidity, vibration
+- **EMC Testing**: Emissions and immunity testing
+- **Safety Testing**: Electrical safety, insulation resistance
+
+### 8.2 Software Testing
+
+**REQ-TEST-002: Software Validation**
+- **Unit Testing**: Individual module testing, 90% code coverage
+- **Integration Testing**: Interface and communication testing
+- **System Testing**: End-to-end functionality testing
+- **Performance Testing**: Load and stress testing
+- **Security Testing**: Penetration testing and vulnerability assessment
+- **Regression Testing**: Automated testing for software updates
+
+---
+
+## 9. Quality Control & Assurance
+
+### 9.1 Quality Standards
+
+**REQ-QC-001: Quality Management System**
+- **ISO 9001:2015**: Quality management system certification
+- **IPC-A-610**: Acceptability of electronic assemblies
+- **J-STD-001**: Requirements for soldered electrical connections
+- **AS9100**: Aerospace quality management (if applicable)
+
+### 9.2 Quality Metrics
+
+**REQ-QC-002: Quality KPIs**
+- **First Pass Yield**: >95% for PCB assembly
+- **Defect Rate**: <100 PPM (parts per million)
+- **Field Failure Rate**: <0.1% in first year
+- **Customer Satisfaction**: >98% positive feedback
+- **Return Rate**: <1% within warranty period
+
+---
+
+## 10. Installation & Deployment
+
+### 10.1 Installation Procedures
+
+**REQ-INST-001: Standard Installation Process**
+1. **Site Survey**: Environment assessment and requirements validation
+2. **Mounting**: Secure mounting using provided brackets
+3. **Power Connection**: AC power connection and backup battery installation
+4. **Network Configuration**: WiFi/Ethernet setup and connectivity testing
+5. **Sensor Calibration**: Initial sensor calibration and baseline establishment
+6. **System Configuration**: User preferences and alert setup
+7. **Testing**: End-to-end system testing and validation
+8. **Training**: User training and documentation handover
+
+---
+
+## 11. Maintenance & Support Procedures
+
+### 11.1 Preventive Maintenance
+
+**REQ-MAINT-001: Maintenance Schedule**
+- **Weekly**: System health check, battery status verification
+- **Monthly**: Sensor calibration check, software update check
+- **Quarterly**: Deep cleaning, connector inspection, performance review
+- **Annually**: Battery replacement, comprehensive system audit
+
+---
+
+## 12. Compliance & Certification
+
+### 12.1 Regulatory Compliance
+
+**REQ-COMP-001: Required Certifications**
+- **CE Marking**: European Conformity (EU)
+- **FCC Certification**: Federal Communications Commission (USA)
+- **IC Certification**: Industry Canada
+- **RoHS Compliance**: Restriction of Hazardous Substances
+- **UL Listing**: Underwriters Laboratories safety certification
+- **ISO 26262**: Automotive functional safety (ASIL-D)
+- **IEC 61508**: Functional safety (SIL-3)
+
+---
+
+## 13. Bill of Materials (BOM)
+
+### 13.1 Cost-Optimized BOM (Primary Recommendation)
+
+| Category | Part Number | Description | Quantity | Unit Cost (₹) | Unit Cost ($) | Supplier | Status |
+|----------|-------------|-------------|----------|---------------|---------------|----------|--------|
+| **Processing** | RPI5-MOD-B-4GB | Raspberry Pi 5 Model B 4GB | 1 | ₹5,650 | $68.00 | Raspberry Pi Foundation | ✅ Optimized |
+| **Storage** | NM620-256GB | Lexar NM620 NVMe SSD 256GB | 1 | ₹1,799 | $22.00 | Lexar | ✅ Optimized |
+| **Storage** | MicroSD-32GB | MicroSD Card 32GB Class 10 | 1 | ₹320 | $4.00 | Various | ✅ Retained |
+| **Sensors** | HC-SR501 | PIR Motion Sensor | 4 | ₹42 | $0.50 | Various | ✅ Retained |
+| **Sensors** | AMG8833 | Thermal Camera 8x8 | 1 | ₹1,350 | $16.00 | Panasonic | ✅ Optimized |
+| **Sensors** | BGT60TR13C | 60GHz Radar Sensor | 1 | ₹2,250 | $27.00 | Infineon | ✅ Retained |
+| **Sensors** | DS18B20+ | Digital Temperature Sensor | 4 | ₹93 | $1.10 | Maxim | ✅ Retained |
+| **Sensors** | CM1107N | CO2 Sensor | 2 | ₹1,480 | $18.00 | Cubic | ✅ Optimized |
+| **Sensors** | SHT40-AD1B | Temp/Humidity Sensor | 2 | ₹420 | $5.00 | Sensirion | ✅ Retained |
+| **Sensors** | ICS-43434 | MEMS Microphone | 4 | ₹85 | $1.00 | TDK InvenSense | ✅ Optimized |
+| **Sensors** | MC-38 | Magnetic Door Sensor | 4 | ₹18 | $0.22 | Various | ✅ Retained |
+| **Sensors** | A3144 | Hall Effect Sensor | 3 | ₹7 | $0.08 | Allegro | ✅ Retained |
+| **Power** | LRS-50-12 | 50W 12V Power Supply (Indoor) | 1 | ₹900 | $11.00 | Mean Well | ✅ Optimized |
+| **Power** | NCR18650PF | Li-ion Battery 2600mAh | 6 | ₹285 | $3.40 | Panasonic | ✅ Optimized |
+| **Power** | BQ76940RGER | Battery Monitor IC | 1 | ₹415 | $5.00 | Texas Instruments | ✅ Retained |
+| **Communication** | SIM7600E | 4G LTE Module (No GNSS) | 1 | ₹2,950 | $36.00 | SIMCom | ✅ Optimized |
+| **Interface** | PCF8575 | I/O Expander 16-bit | 2 | ₹62 | $0.75 | NXP | ✅ Optimized |
+| **Interface** | ADS1115IDGSR | 16-bit ADC 4-channel | 1 | ₹138 | $1.65 | Texas Instruments | ✅ Retained |
+| **Interface** | PCA9685PW | 16-channel PWM Driver | 1 | ₹110 | $1.30 | NXP | ✅ Retained |
+| **Security** | ATECC608B | Crypto Authentication IC | 1 | ₹122 | $1.45 | Microchip | ✅ Optimized |
+| **Timing** | DS3231 | RTC Module | 1 | ₹90 | $1.10 | Maxim | ✅ Retained |
+| **Enclosure** | 3D-Print-ASA | 3D Printed ASA (Prototype) | 1 | ₹350 | $4.20 | Custom | ✅ Optimized |
+| **PCB** | Main-PCB-V1.0 | 4-layer Main PCB 100x100mm | 1 | ₹480 | $5.80 | JLCPCB | ✅ Retained |
+| **Misc** | Various | Resistors, Capacitors, Connectors | 1 | ₹820 | $10.00 | Various | ✅ Retained |
+
+### 13.2 Alternative Premium BOM (High-Performance Option)
+
+| Category | Part Number | Description | Quantity | Unit Cost (₹) | Unit Cost ($) | Supplier | Use Case |
+|----------|-------------|-------------|----------|---------------|---------------|----------|----------|
+| **Processing** | RPI5-MOD-B-8GB | Raspberry Pi 5 Model B 8GB | 1 | ₹6,990 | $84.00 | Raspberry Pi Foundation | Heavy AI workloads |
+| **Storage** | MZ-V8V1T0BW | Samsung 980 NVMe SSD 1TB | 1 | ₹7,950 | $96.00 | Samsung | Long-term data retention |
+| **Sensors** | MLX90640ESF-BAA | Thermal Camera 32x24 | 1 | ₹4,750 | $57.00 | Melexis | Vital sign monitoring |
+| **Sensors** | SCD40-D-R2 | CO2 Sensor (Premium) | 2 | ₹2,880 | $35.00 | Sensirion | High accuracy required |
+| **Power** | GST60A12-P1J | 60W 12V Power Supply | 1 | ₹2,470 | $30.00 | Mean Well | Outdoor/Vehicle use |
+| **Power** | INR18650-35E | Li-ion Battery 3500mAh | 6 | ₹410 | $5.00 | Samsung | Extended runtime |
+| **Security** | SLB9670VQ2.0 | TPM 2.0 Module | 1 | ₹690 | $8.30 | Infineon | Enterprise security |
+| **Display** | SSD1306-128x64 | OLED Display 0.96" | 1 | ₹175 | $2.10 | Various | Local status display |
+
+### 13.3 Cost Analysis & Implementation Strategy
+
+**Cost-Optimized BOM Total**: ₹23,600 ($284) per unit (1000+ quantity)
+**Premium BOM Total**: ₹37,300 ($450) per unit (1000+ quantity)
+**Cost Savings**: ₹13,700 ($166) per unit (37% reduction)
+
+### 13.4 Phased Implementation Strategy
+
+#### **Phase 1: Cost-Optimized Prototype (₹23,600)**
+**Target**: MVP development and pilot testing
+- 4GB Raspberry Pi 5 (adequate for edge inference)
+- 256GB NVMe SSD (5+ years of data storage)
+- AMG8833 8×8 thermal camera (basic presence detection)
+- ATECC608B crypto chip (secure boot and key storage)
+- 50W power supply (indoor deployments)
+- 2600mAh batteries (>24h runtime)
+
+#### **Phase 2: Market-Specific Variants**
+**Indoor/Home Version**: Cost-optimized BOM + minor upgrades
+**Vehicle/Outdoor Version**: Hybrid BOM with rugged components
+**Healthcare Version**: Premium BOM with high-resolution thermal
+
+#### **Phase 3: Volume Production Optimization**
+**1000+ units**: Additional 10% bulk discount
+**Final cost target**: ₹21,240 ($256) per unit
+**Retail price target**: ₹85,000 ($1,025) (4× markup)
+
+### 13.5 Component Validation Requirements
+
+#### **Critical Validations Before Production:**
+
+1. **CM1107N CO₂ Sensor Integration**
+   - Verify 5V supply compatibility with 3.3V Pi system
+   - Test calibration procedures and accuracy
+   - Validate I2C communication reliability
+
+2. **AMG8833 vs MLX90640 Performance Testing**
+   - Compare detection accuracy in real-world scenarios
+   - Measure false positive/negative rates
+   - Test multi-person detection capabilities
+
+3. **NCR18650PF Battery Compatibility**
+   - Verify protection circuit integration with BQ76940
+   - Test charge/discharge profiles and safety
+
+4. **PCF8575 I/O Expander Testing**
+   - Validate 400kHz I2C operation under load
+   - Test GPIO switching speed and reliability
+
+### 13.6 Supplier Diversification Strategy
+
+#### **Primary Suppliers (Cost-Optimized)**
+- **Indian Distributors**: Robu.in, Element14 India, IndiaMART
+- **Direct Import**: JLCPCB, Lexar, Panasonic
+- **Local Assembly**: Custom enclosures, cable harnesses
+
+#### **Backup Suppliers (Risk Mitigation)**
+- **Processing**: Orange Pi, Rock Pi alternatives
+- **Storage**: Kingston, Crucial SSD alternatives
+- **Sensors**: Multiple sensor vendors per type
+- **Communication**: Alternative SIM7600 variants
+
+**Total Component Cost (Optimized)**: ₹23,600 ($284) per unit
+**Target Retail Price**: ₹85,000 ($1,025) (4× margin for distribution and profit)
+**Volume Discount (1000+)**: ₹21,240 ($256) per unit
+
+---
+
+## 14. Technical Appendices
+
+### Appendix A: Pin Assignment Tables
+
+**Raspberry Pi 5 GPIO Pin Assignments**:
+| GPIO Pin | Function | Device/Signal | Notes |
+|----------|----------|---------------|-------|
+| GPIO 2 | I2C SDA | I2C Bus 1 Data | Pull-up 1.8kΩ |
+| GPIO 3 | I2C SCL | I2C Bus 1 Clock | Pull-up 1.8kΩ |
+| GPIO 4 | GPIO | Emergency Button | Internal pull-up |
+| GPIO 5 | GPIO | Status LED Red | Active low |
+| GPIO 6 | GPIO | Status LED Green | Active low |
+| GPIO 7 | SPI CE1 | TPM CS | SPI Bus 0 |
+| GPIO 8 | SPI CE0 | Radar CS | SPI Bus 0 |
+| GPIO 17 | GPIO | PIR Sensor 1 | Digital input |
+| GPIO 18 | GPIO | PIR Sensor 2 | Digital input |
+| GPIO 19 | GPIO | PIR Sensor 3 | Digital input |
+| GPIO 20 | GPIO | PIR Sensor 4 | Digital input |
+| GPIO 21 | GPIO | Magnetic Sensor 1 | Digital input |
+| GPIO 22 | GPIO | Magnetic Sensor 2 | Digital input |
+
+### Appendix B: I2C Device Address Map
+
+| Address | Device | Description |
+|---------|--------|-------------|
+| 0x33 | MLX90640 | Thermal Camera |
+| 0x44 | SHT40 #1 | Temperature/Humidity Sensor |
+| 0x45 | SHT40 #2 | Temperature/Humidity Sensor |
+| 0x48 | ADS1115 | 16-bit ADC |
+| 0x62 | SCD40 #1 | CO2 Sensor |
+| 0x63 | SCD40 #2 | CO2 Sensor |
+| 0x68 | DS3231 | Real-Time Clock |
+| 0x20 | MCP23017 #1 | I/O Expander |
+| 0x21 | MCP23017 #2 | I/O Expander |
+| 0x40 | PCA9685 | PWM Driver |
+
+### Appendix C: Power Consumption Analysis
+
+| Component | Operating Current | Standby Current | Power (12V) | Notes |
+|-----------|------------------|-----------------|-------------|-------|
+| Raspberry Pi 5 | 2.5A @ 5V | 0.1A @ 5V | 12.5W / 0.5W | Active/Idle |
+| Thermal Camera | 23mA @ 3.3V | 0.5mA @ 3.3V | 0.076W / 0.002W | Active/Sleep |
+| Radar Sensor | 85mA @ 3.3V | 1mA @ 3.3V | 0.28W / 0.003W | Active/Sleep |
+| PIR Sensors (4x) | 200μA @ 3.3V | 50μA @ 3.3V | 0.003W / 0.0007W | Total all |
+| CO2 Sensors (2x) | 36mA @ 3.3V | 0.5mA @ 3.3V | 0.12W / 0.002W | Total both |
+| LTE Module | 2A @ 3.3V | 10mA @ 3.3V | 6.6W / 0.033W | TX/Idle |
+| Display | 20mA @ 3.3V | 5mA @ 3.3V | 0.066W / 0.017W | Active/Dim |
+
+**Total Power Consumption**:
+- **Maximum Operating**: ~20W
+- **Normal Operating**: ~15W  
+- **Standby Mode**: ~2W
+
+**Battery Life** (7000mAh @ 11.1V = 77.7Wh):
+- **Normal Operation**: 77.7Wh ÷ 15W = 5.2 hours
+- **Standby Mode**: 77.7Wh ÷ 2W = 38.9 hours
+
+---
+
+**Document Version**: 1.0  
+**Last Updated**: January 13, 2025  
+**Next Review**: February 13, 2025  
+**Document Owner**: Chief Technology Officer  
+**Approved By**: CTO, Hardware Lead, Software Lead, Manufacturing Lead
+
+**Distribution List**:
+
+**Core Team:**
+- **AI/ML Engineers**: Optimize risk assessment algorithms (Akhila, Shivam, Betsy, Rudra)
+- **Mobile Developers**: Build iOS/Android apps (Preeyas, Akhila, Shivam)
+- **Backend Developers**: Develop server infrastructure/APIs (Rudra, Shivam)
+- **Hardware Engineers**: Design sensor/communication modules (TBD - need to find one)
+- **QA Specialists**: Ensure reliability/performance (Shravani, Betsy)
+
+**Supporting Roles:**
+- **Product Owner**: Prioritize features/user needs (Shivam)
+- **UX/UI Designer**: Create intuitive interfaces (Akhila or Neeha)
+- **Safety Specialist**: Ensure regulatory compliance (Nitin Sir)
+- **Technical Writer**: Develop documentation (Akhila)
+
+**Additional Stakeholders:**
+- Manufacturing Team
+- Regulatory Affairs
+- Supply Chain Management
+
+---
+
+## 14. Cost Optimization Impact Summary
+
+### 14.1 Financial Impact Analysis
+
+**Original BOM Cost**: ₹37,300 ($450) per unit
+**Optimized BOM Cost**: ₹23,600 ($284) per unit
+**Total Savings**: ₹13,700 ($166) per unit (37% reduction)
+**Volume Pricing (1000+)**: ₹21,240 ($256) per unit (43% reduction)
+
+### 14.2 Key Optimization Decisions
+
+| Component | Original | Optimized | Savings | Technical Impact |
+|-----------|----------|-----------|---------|------------------|
+| **RAM** | 8GB Pi 5 | 4GB Pi 5 | ₹1,340 | None - sufficient for edge AI |
+| **Storage** | 1TB Samsung | 256GB Lexar | ₹6,151 | None - 5+ years capacity |
+| **Thermal** | MLX90640 32×24 | AMG8833 8×8 | ₹3,400 | Reduced resolution, adequate for presence |
+| **Power** | 60W Enclosed | 50W Open-frame | ₹1,570 | Indoor use only |
+| **Batteries** | 3500mAh Samsung | 2600mAh Panasonic | ₹750 | 25% less capacity, >24h runtime |
+| **Security** | TPM 2.0 | ATECC608B | ₹568 | Same security level, simpler |
+| **I/O Expander** | MCP23017 | PCF8575 | ₹126 | Adequate for system needs |
+
+### 14.3 Market Positioning Strategy
+
+**Cost-Optimized Version (₹23,600)**:
+- Target: Volume market, residential use
+- Features: Full functionality with optimized components
+- Margin: 4× markup → ₹85,000 retail price
+
+**Premium Version (₹37,300)**:
+- Target: Healthcare, critical applications
+- Features: High-resolution thermal, extended storage
+- Margin: 3× markup → ₹1,12,000 retail price
+
+### 14.4 Implementation Roadmap
+
+**Phase 1 (Months 1-4): Prototype Development**
+- Use cost-optimized BOM for initial development
+- Validate component alternatives through testing
+- Build pilot units for field testing
+
+**Phase 2 (Months 5-8): Market Validation**
+- Deploy prototypes in real environments
+- Gather performance data and user feedback
+- Finalize component selection based on results
+
+**Phase 3 (Months 9-12): Production Scale-up**
+- Negotiate volume pricing with suppliers
+- Set up manufacturing and quality control
+- Launch cost-optimized variant first
+
+**Phase 4 (Months 13+): Market Expansion**
+- Introduce premium variants for specialized markets
+- Expand to outdoor/vehicle variants with rugged components
+- Continuous cost optimization and feature enhancement
+
+### 14.5 Risk Mitigation
+
+**Component Availability**: Multiple suppliers identified for each component
+**Performance Validation**: Extensive testing plan for all optimized components
+**Supply Chain**: Local Indian suppliers prioritized for cost and availability
+**Technology Risk**: Premium components available as upgrade path
+
+---
+
+*This document is confidential and proprietary to Quantum Leap Consultants. Distribution is restricted to authorized personnel only. This document contains detailed technical specifications for the complete product development and manufacturing process.* 
