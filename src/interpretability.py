@@ -51,6 +51,19 @@ class ModelInterpreter:
             'Audio': list(range(28, 36)),
             'Door': list(range(36, 39))
         }
+        
+        # Wrapper to ensure explainers see a single-tensor output (class logits)
+        class _ClassOnlyWrapper(nn.Module):
+            def __init__(self, base: nn.Module):
+                super().__init__()
+                self.base = base
+            def forward(self, x):
+                out = self.base(x)
+                if isinstance(out, tuple):
+                    return out[0]
+                return out
+        
+        self.model_for_explain = _ClassOnlyWrapper(self.model).to(self.device).eval()
     
     def shap_analysis(self, data: List[Dict[str, Any]], num_samples: int = 100) -> Dict[str, Any]:
         """
@@ -68,30 +81,36 @@ class ModelInterpreter:
         
         print("Performing SHAP analysis...")
         
-        # Prepare data
+        # Prepare data (features shape: [N, 39])
         features, labels = self._prepare_data_for_analysis(data, num_samples)
         
-        # Create SHAP explainer
-        explainer = shap.DeepExplainer(self.model, features[:10])  # Use subset as background
+        # Ensure background size is reasonable
+        bg = features[: min(10, features.shape[0])]
+        
+        # Prefer DeepExplainer; fall back to GradientExplainer if unsupported
+        explainer = None
+        try:
+            explainer = shap.DeepExplainer(self.model_for_explain, bg)
+        except Exception as e:
+            print(f"DeepExplainer unavailable ({e}); falling back to GradientExplainer.")
+            explainer = shap.GradientExplainer(self.model_for_explain, bg)
         
         # Calculate SHAP values
         shap_values = explainer.shap_values(features[:num_samples])
         
         # Handle different output formats
         if isinstance(shap_values, list):
-            # Multi-class output
             shap_results = {
                 'shap_values': shap_values,
-                'base_values': explainer.expected_value,
+                'base_values': explainer.expected_value if hasattr(explainer, 'expected_value') else [0.0],
                 'features': features[:num_samples],
                 'labels': labels[:num_samples],
                 'feature_names': self.feature_names
             }
         else:
-            # Single output
             shap_results = {
                 'shap_values': [shap_values],
-                'base_values': [explainer.expected_value],
+                'base_values': [explainer.expected_value] if hasattr(explainer, 'expected_value') else [0.0],
                 'features': features[:num_samples],
                 'labels': labels[:num_samples],
                 'feature_names': self.feature_names
