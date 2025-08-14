@@ -78,7 +78,7 @@ class ONNXExporter:
         # Determine input shape
         if input_shape is None:
             # Default shape based on typical sensor fusion input
-            input_shape = (batch_size, 30, 21)  # 30 timesteps, 21 features
+            input_shape = (batch_size, 30, 39)  # 30 timesteps, 39 features
         else:
             input_shape = (batch_size,) + input_shape[1:]
         
@@ -396,25 +396,47 @@ class ONNXExporter:
         """
         self.logger.info(f"Benchmarking models with {num_runs} runs...")
         
-        if input_shape is None:
-            input_shape = (1, 30, 21)  # Default shape
-        
-        # Load ONNX model
+        # Load ONNX model and derive a concrete input shape if not provided
         ort_session = ort.InferenceSession(onnx_path)
-        input_name = ort_session.get_inputs()[0].name
+        input_info = ort_session.get_inputs()[0]
+        input_name = input_info.name
+        
+        if input_shape is None:
+            onnx_input_shape = input_info.shape
+            concrete_shape: List[int] = []
+            # Fallback to the PyTorch model's expected feature dimension if needed
+            fallback_features = None
+            try:
+                fallback_features = getattr(getattr(pytorch_model, 'input_projection', None), 'in_features', None)
+            except Exception:
+                fallback_features = None
+            if not fallback_features:
+                fallback_features = getattr(pytorch_model, 'input_size', 39)
+            
+            for dim in onnx_input_shape:
+                if isinstance(dim, str) or dim is None:
+                    d = str(dim).lower() if dim is not None else ''
+                    if 'batch' in d:
+                        concrete_shape.append(1)
+                    elif 'sequence' in d or 'seq' in d:
+                        concrete_shape.append(30)
+                    else:
+                        concrete_shape.append(int(fallback_features))
+                else:
+                    concrete_shape.append(int(dim))
+            input_shape = tuple(concrete_shape)
         
         # Warm up
         dummy_input = np.random.randn(*input_shape).astype(np.float32)
         dummy_input_torch = torch.from_numpy(dummy_input)
         
-        # Warm up runs
         for _ in range(10):
             with torch.no_grad():
                 _ = pytorch_model(dummy_input_torch)
             _ = ort_session.run(None, {input_name: dummy_input})
         
         # Benchmark PyTorch
-        pytorch_times = []
+        pytorch_times: List[float] = []
         for _ in range(num_runs):
             test_input = np.random.randn(*input_shape).astype(np.float32)
             test_input_torch = torch.from_numpy(test_input)
@@ -422,16 +444,15 @@ class ONNXExporter:
             start_time = time.time()
             with torch.no_grad():
                 _ = pytorch_model(test_input_torch)
-            pytorch_times.append((time.time() - start_time) * 1000)  # Convert to ms
+            pytorch_times.append((time.time() - start_time) * 1000)
         
         # Benchmark ONNX
-        onnx_times = []
+        onnx_times: List[float] = []
         for _ in range(num_runs):
             test_input = np.random.randn(*input_shape).astype(np.float32)
-            
             start_time = time.time()
             _ = ort_session.run(None, {input_name: test_input})
-            onnx_times.append((time.time() - start_time) * 1000)  # Convert to ms
+            onnx_times.append((time.time() - start_time) * 1000)
         
         results = {
             'pytorch_time': np.mean(pytorch_times),
@@ -439,11 +460,10 @@ class ONNXExporter:
             'pytorch_memory': self._estimate_memory_usage(pytorch_model),
             'onnx_time': np.mean(onnx_times),
             'onnx_std': np.std(onnx_times),
-            'onnx_memory': os.path.getsize(onnx_path) / (1024 ** 2),  # MB
+            'onnx_memory': os.path.getsize(onnx_path) / (1024 ** 2),
             'speedup': np.mean(pytorch_times) / np.mean(onnx_times),
             'memory_reduction': (
-                self._estimate_memory_usage(pytorch_model) - 
-                os.path.getsize(onnx_path) / (1024 ** 2)
+                self._estimate_memory_usage(pytorch_model) - os.path.getsize(onnx_path) / (1024 ** 2)
             )
         }
         
@@ -482,20 +502,20 @@ class ONNXExporter:
             self.opset_version = 11  # Better ARM support
             self.optimize = True
             self.quantize = True
-            input_shape = (1, 30, 21)  # Single batch for edge
+            input_shape = (1, 30, 39)  # Single batch for edge
             
         elif target_platform.lower() == "ai_hat":
             # AI HAT+ optimizations
             self.opset_version = 13
             self.optimize = True
             self.quantize = False  # Hailo-8 handles quantization
-            input_shape = (1, 30, 21)
+            input_shape = (1, 30, 39)
             
         else:
             # Generic edge device
             self.optimize = True
             self.quantize = True
-            input_shape = (1, 30, 21)
+            input_shape = (1, 30, 39)
         
         # Export with platform-specific settings
         exported_path = self.export(
