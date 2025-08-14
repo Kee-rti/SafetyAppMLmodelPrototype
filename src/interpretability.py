@@ -113,21 +113,25 @@ class ModelInterpreter:
             explainer = shap.GradientExplainer(self.model_for_explain, bg)
             shap_values = explainer.shap_values(features[:num_samples])
         
+        # Convert features/labels to numpy for plotting
+        features_np = features[:num_samples].detach().cpu().numpy()
+        labels_np = labels[:num_samples].detach().cpu().numpy()
+        
         # Handle different output formats
         if isinstance(shap_values, list):
             shap_results = {
                 'shap_values': shap_values,
                 'base_values': getattr(explainer, 'expected_value', [0.0]),
-                'features': features[:num_samples],
-                'labels': labels[:num_samples],
+                'features': features_np,
+                'labels': labels_np,
                 'feature_names': self.feature_names
             }
         else:
             shap_results = {
                 'shap_values': [shap_values],
                 'base_values': [getattr(explainer, 'expected_value', 0.0)],
-                'features': features[:num_samples],
-                'labels': labels[:num_samples],
+                'features': features_np,
+                'labels': labels_np,
                 'feature_names': self.feature_names
             }
         
@@ -143,25 +147,32 @@ class ModelInterpreter:
         Returns:
             Plotly figure
         """
-        shap_values = shap_results['shap_values']
-        features = shap_results['features']
+        shap_values_list = shap_results['shap_values']
         feature_names = shap_results['feature_names']
         
-        # Use first class for summary (or average across classes)
-        if len(shap_values) > 1:
-            # Average SHAP values across classes
-            avg_shap = np.mean([np.abs(sv) for sv in shap_values], axis=0)
-        else:
-            avg_shap = np.abs(shap_values[0])
+        # Aggregate SHAP over samples (and any extra dims) per class, then average across classes
+        per_class_importance = []
+        for sv in shap_values_list:
+            sv_arr = np.array(sv)
+            # Reduce across all axes except the last feature axis
+            if sv_arr.ndim <= 1:
+                fi = np.abs(sv_arr)
+            else:
+                reduce_axes = tuple(range(sv_arr.ndim - 1))
+                fi = np.mean(np.abs(sv_arr), axis=reduce_axes)
+            per_class_importance.append(fi)
         
-        # Calculate feature importance
-        feature_importance = np.mean(avg_shap, axis=0)
+        feature_importance = np.mean(np.stack([np.ravel(fi) for fi in per_class_importance], axis=0), axis=0)
+        feature_importance = np.asarray(feature_importance).reshape(-1)
         
-        # Create summary plot
+        num_feats = min(len(feature_importance), len(feature_names))
+        feature_importance = feature_importance[:num_feats]
+        
+        # Create summary plot dataframe
         importance_df = pd.DataFrame({
-            'Feature': feature_names[:len(feature_importance)],
+            'Feature': feature_names[:num_feats],
             'Importance': feature_importance,
-            'Sensor_Group': [self._get_sensor_group(i) for i in range(len(feature_importance))]
+            'Sensor_Group': [self._get_sensor_group(i) for i in range(num_feats)]
         }).sort_values('Importance', ascending=True)
         
         fig = px.bar(
