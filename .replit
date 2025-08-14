@@ -2,7 +2,7 @@ modules = ["python-3.11"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["abseil-cpp", "cairo", "ffmpeg-full", "freetype", "ghostscript", "glibcLocales", "gobject-introspection", "gtest", "gtk3", "libjpeg_turbo", "libpng", "oneDNN", "pkg-config", "qhull", "re2", "tcl", "tk", "which"]
+packages = ["abseil-cpp", "cairo", "ffmpeg-full", "freetype", "ghostscript", "glibcLocales", "gobject-introspection", "gtest", "gtk3", "libjpeg_turbo", "libpng", "libxcrypt", "oneDNN", "pkg-config", "qhull", "re2", "tcl", "tk", "which", "xsimd"]
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -24,13 +24,13 @@ args = "Streamlit ML Platform"
 name = "Streamlit ML Platform"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "streamlit run app.py --server.port 5000"
 waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [[ports]]
 localPort = 5000

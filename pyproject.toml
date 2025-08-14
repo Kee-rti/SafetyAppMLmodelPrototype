@@ -5,6 +5,16 @@ description = "Add your description here"
 requires-python = ">=3.11"
 dependencies = [
     "streamlit>=1.48.1",
+    "torch",
+    "numpy",
+    "pandas",
+    "scikit-learn",
+    "plotly",
+    "matplotlib",
+    "seaborn",
+    "scipy",
+    "onnx",
+    "onnxruntime",
 ]
 
 [[tool.uv.index]]

@@ -1,17 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import torch
-import torch.nn as nn
-import plotly.express as px
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.model_selection import train_test_split
-import optuna
-import mlflow
 import os
 import pickle
 from datetime import datetime
@@ -19,15 +8,114 @@ import warnings
 import sys
 warnings.filterwarnings('ignore')
 
-# Import custom modules
-from src.data_loader import TRSDataLoader
-from src.models import SensorFusionLSTM, SensorFusionTransformer, MultiModalFusionNet, get_model
-from src.fusion_techniques import get_fusion_technique, EarlyFusion, FeatureLevelFusion, LateFusion, DynamicGatedFusion
-from src.preprocessing import SensorDataPreprocessor
-from src.evaluation import ModelEvaluator
-from src.onnx_export import ONNXExporter
-from src.interpretability import ModelInterpreter
-from utils.constants import ScenarioType, RiskLevel, SENSOR_TYPES, MODEL_CONFIGS
+# Core ML imports
+try:
+    import torch
+    import torch.nn as nn
+    HAS_TORCH = True
+except ImportError:
+    HAS_TORCH = False
+    st.error("PyTorch not available. Install torch for full functionality.")
+
+# Visualization imports
+try:
+    import plotly.express as px
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+    HAS_PLOTLY = True
+except ImportError:
+    HAS_PLOTLY = False
+
+try:
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    HAS_MATPLOTLIB = True
+except ImportError:
+    HAS_MATPLOTLIB = False
+
+# ML utilities
+try:
+    from sklearn.metrics import classification_report, confusion_matrix
+    from sklearn.model_selection import train_test_split
+    HAS_SKLEARN = True
+except ImportError:
+    HAS_SKLEARN = False
+
+# Optional advanced libraries
+try:
+    import optuna
+    HAS_OPTUNA = True
+except ImportError:
+    HAS_OPTUNA = False
+
+try:
+    import mlflow
+    HAS_MLFLOW = True
+except ImportError:
+    HAS_MLFLOW = False
+
+try:
+    import shap
+    HAS_SHAP = True
+except ImportError:
+    HAS_SHAP = False
+
+try:
+    import onnx
+    import onnxruntime
+    HAS_ONNX = True
+except ImportError:
+    HAS_ONNX = False
+
+# Import custom modules with error handling
+try:
+    from src.data_loader import TRSDataLoader
+    from src.models import SensorFusionLSTM, SensorFusionTransformer, MultiModalFusionNet, get_model
+    from src.fusion_techniques import get_fusion_technique, EarlyFusion, FeatureLevelFusion, LateFusion, DynamicGatedFusion
+    from src.preprocessing import SensorDataPreprocessor
+    from src.evaluation import ModelEvaluator
+    from src.onnx_export import ONNXExporter
+    from src.interpretability import ModelInterpreter
+    from utils.constants import ScenarioType, RiskLevel, SENSOR_TYPES, MODEL_CONFIGS
+    HAS_CUSTOM_MODULES = True
+except ImportError as e:
+    HAS_CUSTOM_MODULES = False
+    st.error(f"Custom modules not fully available: {e}")
+    # Define fallback classes and constants
+    class MockDataLoader:
+        def __init__(self): pass
+        def generate_dataset(self, *args, **kwargs): return None, None, None, None
+    
+    TRSDataLoader = MockDataLoader
+    # Create mock enums with proper attributes
+    class ScenarioType:
+        NORMAL_ACTIVITY = 0
+        FALL_DETECTED = 1
+        MEDICAL_EMERGENCY = 2
+        NO_MOVEMENT = 3
+        TRAPPED = 1
+        EMERGENCY = 2
+        MAINTENANCE = 3
+        
+        @classmethod
+        def __iter__(cls):
+            return iter([cls.NORMAL_ACTIVITY, cls.FALL_DETECTED, cls.MEDICAL_EMERGENCY, cls.NO_MOVEMENT])
+    
+    class RiskLevel:
+        LOW = 0
+        MEDIUM = 1
+        HIGH = 2
+        CRITICAL = 3
+        
+        @classmethod
+        def __iter__(cls):
+            return iter([cls.LOW, cls.MEDIUM, cls.HIGH, cls.CRITICAL])
+        
+        @classmethod
+        def __len__(cls):
+            return 4
+    SENSOR_TYPES = ['PIR', 'Thermal', 'Radar', 'Environmental', 'Audio', 'Door']
+    MODEL_CONFIGS = {}
 
 # Set page config
 st.set_page_config(
