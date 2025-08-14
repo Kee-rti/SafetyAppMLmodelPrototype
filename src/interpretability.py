@@ -200,34 +200,61 @@ class ModelInterpreter:
         Returns:
             Plotly figure
         """
-        shap_values = shap_results['shap_values'][0]  # Use first class
-        base_value = shap_results['base_values'][0] if isinstance(shap_results['base_values'], list) else shap_results['base_values']
-        features = shap_results['features']
+        shap_values_list = shap_results['shap_values']
+        base_values = shap_results['base_values']
+        features_np = shap_results['features']
         feature_names = shap_results['feature_names']
         
-        # Get SHAP values for specific sample
-        sample_shap = shap_values[sample_idx]
-        sample_features = features[sample_idx]
+        # Use first class' SHAP values
+        sv = np.array(shap_values_list[0])
+        
+        # Select the requested sample, then reduce to a 1D vector over features
+        if sv.ndim == 1:
+            sample_shap = sv
+        else:
+            sample_shap = sv[int(sample_idx)]
+            if sample_shap.ndim > 1:
+                reduce_axes = tuple(range(sample_shap.ndim - 1))
+                sample_shap = np.mean(sample_shap, axis=reduce_axes)
+        sample_shap = np.asarray(sample_shap).reshape(-1)
+        
+        # Corresponding sample features reduced to 1D for display
+        sample_features = np.array(features_np[int(sample_idx)])
+        if sample_features.ndim > 1:
+            reduce_axes = tuple(range(sample_features.ndim - 1))
+            sample_features = np.mean(sample_features, axis=reduce_axes)
+        sample_features = np.asarray(sample_features).reshape(-1)
+        
+        # Align lengths with feature names
+        num_feats = min(len(sample_shap), len(feature_names), len(sample_features))
+        sample_shap = sample_shap[:num_feats]
+        sample_features = sample_features[:num_feats]
         
         # Sort by absolute SHAP value
-        sorted_indices = np.argsort(np.abs(sample_shap))[::-1][:15]  # Top 15 features
+        sorted_indices = np.argsort(np.abs(sample_shap))[::-1][:15]
+        
+        # Base value (if available)
+        base_value = base_values[0] if isinstance(base_values, list) else base_values
+        base_value = float(base_value) if np.isscalar(base_value) else 0.0
         
         # Prepare waterfall data
         waterfall_data = []
         cumulative = base_value
-        
-        for i, idx in enumerate(sorted_indices):
+        for i in range(len(sorted_indices)):
+            idx = int(sorted_indices[i])
+            fname = feature_names[idx] if idx < len(feature_names) else f'feature_{idx}'
+            sval = float(sample_shap[idx])
+            fval = float(sample_features[idx])
+            cumulative += sval
             waterfall_data.append({
-                'feature': feature_names[idx],
-                'shap_value': sample_shap[idx],
-                'feature_value': sample_features[idx],
-                'cumulative': cumulative + sample_shap[idx]
+                'feature': fname,
+                'shap_value': sval,
+                'feature_value': fval,
+                'cumulative': cumulative
             })
-            cumulative += sample_shap[idx]
         
         # Create waterfall plot
         fig = go.Figure()
-        
         x_pos = list(range(len(waterfall_data)))
         y_values = [d['shap_value'] for d in waterfall_data]
         colors = ['red' if v < 0 else 'green' for v in y_values]
@@ -236,14 +263,13 @@ class ModelInterpreter:
             x=x_pos,
             y=y_values,
             marker_color=colors,
-            text=[f"{d['feature']}<br>Value: {d['feature_value']:.3f}<br>SHAP: {d['shap_value']:.3f}" 
-                  for d in waterfall_data],
+            text=[f"{d['feature']}<br>Value: {d['feature_value']:.3f}<br>SHAP: {d['shap_value']:.3f}" for d in waterfall_data],
             textposition='outside'
         ))
         
         fig.update_layout(
-            title=f'SHAP Waterfall Plot - Sample {sample_idx}',
-            xaxis_title='Features',
+            title=f'SHAP Waterfall Plot - Sample {int(sample_idx)}',
+            xaxis_title='Top Features',
             yaxis_title='SHAP Value',
             showlegend=False,
             height=600
