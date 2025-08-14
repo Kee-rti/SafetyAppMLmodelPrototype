@@ -6,6 +6,13 @@ A comprehensive Streamlit-based machine learning development platform for multi-
 
 This platform implements a complete ML development environment for safety monitoring systems that use multiple sensor modalities including PIR motion sensors, thermal cameras, radar, environmental sensors, audio sensors, and door sensors. The system is designed to detect trapped dependents and alert caregivers with high accuracy (≥99.8% as per TRS requirements).
 
+### Recent Updates (v1.1)
+- ✅ **Fixed Training Pipeline**: Resolved class distribution issues in multi-class classification
+- ✅ **Enhanced Data Generation**: Improved enum consistency across modules for reliable risk level mapping
+- ✅ **Robust Evaluation**: Dynamic classification reports that adapt to available classes
+- ✅ **Stratified Splitting**: Ensures balanced class representation in train/validation/test sets
+- ✅ **Error Handling**: Better fallback mechanisms for edge cases in training
+
 ## 🏗️ Architecture
 
 ### Core Components
@@ -39,18 +46,29 @@ This platform implements a complete ML development environment for safety monito
    cd sensor-fusion-ml-platform
    ```
 
-2. **Install dependencies**
+2. **Create virtual environment (recommended)**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
+   
+   Or if using uv:
+   ```bash
+   uv sync
+   ```
 
-3. **Run the application**
+4. **Run the application**
    ```bash
    streamlit run app.py
    ```
 
-4. **Access the platform**
-   - Open your browser to `http://localhost:5000`
+5. **Access the platform**
+   - Open your browser to `http://localhost:8501`
    - The platform will be ready for ML development
 
 ### First Steps
@@ -111,16 +129,23 @@ This platform implements a complete ML development environment for safety monito
 - **Precision/Recall**: Per-class performance analysis
 - **F1-Score**: Balanced performance measure
 - **Confusion Matrix**: Detailed error analysis
+- **Dynamic Classification Reports**: Automatically adapts to available classes in dataset
 
 ### Risk Assessment
 - **Risk Score Regression**: Continuous risk estimation
 - **Confidence Analysis**: Prediction certainty measures
 - **Scenario-Specific Performance**: Per-scenario accuracy
+- **Stratified Evaluation**: Ensures balanced representation across risk levels
 
 ### Edge Deployment
 - **Inference Time**: Real-time performance measurement
 - **Model Size**: Memory footprint analysis
 - **Power Consumption**: Energy efficiency metrics
+
+### Training Robustness
+- **Class Balance Handling**: Automatic detection and handling of imbalanced datasets
+- **Stratified Splitting**: Ensures all risk levels are represented in training/validation/test sets
+- **Error Recovery**: Graceful fallback mechanisms for training edge cases
 
 ## 🔧 Configuration
 
@@ -258,6 +283,18 @@ Predefined configurations for different use cases:
 - **Deployment**: Edge device setup instructions
 - **Troubleshooting**: Common issues and solutions
 
+### Known Issues & Solutions
+
+#### Training Errors
+- **Class Mismatch Error**: Fixed in v1.1 - ensure using consistent enum imports across modules
+- **Stratification Failures**: Automatic fallback to random splitting when stratification fails
+- **Memory Issues**: Reduce batch size or use smaller models for limited memory environments
+
+#### Dependencies
+- **PyTorch Installation**: Use CPU version for development, GPU version for training acceleration
+- **Missing Matplotlib**: Install with `pip install matplotlib seaborn` for visualization features
+- **ONNX Export Issues**: Ensure compatible PyTorch and ONNX versions (see requirements.txt)
+
 ## 🤝 Contributing
 
 ### Development Setup
@@ -284,6 +321,23 @@ For technical support and questions:
 - **Issues**: Submit GitHub issues for bugs/features
 - **Community**: Join discussions for best practices
 - **Commercial**: Contact for enterprise deployment support
+
+## 📝 Changelog
+
+### Version 1.1.0 - Training Pipeline Fixes
+- **Fixed**: Enum import conflicts causing risk level mapping failures
+- **Fixed**: Classification report errors when not all classes present in dataset
+- **Enhanced**: Stratified data splitting to ensure balanced class representation
+- **Improved**: Error handling and fallback mechanisms in training pipeline
+- **Added**: Dynamic classification report generation based on available classes
+- **Updated**: Dependencies in requirements.txt with proper version constraints
+
+### Version 1.0.0 - Initial Release
+- Complete ML development platform for safety monitoring
+- Multi-sensor fusion with 6 sensor types
+- Multiple neural network architectures
+- ONNX export and edge deployment support
+- Comprehensive evaluation and interpretability features
 
 ---
 
