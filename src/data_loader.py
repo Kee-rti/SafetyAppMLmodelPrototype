@@ -505,21 +505,47 @@ class SensorFusionDataset(Dataset):
         features = []
         labels = []
         
-        # Risk level to integer mapping
-        risk_to_int = {
-            RiskLevel.LOW: 0,
-            RiskLevel.MEDIUM: 1,
-            RiskLevel.HIGH: 2,
-            RiskLevel.CRITICAL: 3
-        }
+        # Flexible mapping for various risk level representations
+        def to_int_label(risk_level_value) -> int:
+            try:
+                # Already integer 0-3
+                if isinstance(risk_level_value, int):
+                    return int(max(0, min(3, risk_level_value)))
+                # Enum with .value (string like 'low', or int)
+                if hasattr(risk_level_value, 'value'):
+                    underlying = risk_level_value.value
+                    if isinstance(underlying, int):
+                        return int(max(0, min(3, underlying)))
+                    risk_str = str(underlying).lower()
+                else:
+                    risk_str = str(risk_level_value).lower()
+                mapping = {
+                    'low': 0,
+                    'medium': 1,
+                    'high': 2,
+                    'critical': 3
+                }
+                # Handle cases like 'RiskLevel.CRITICAL' string repr
+                if 'critical' in risk_str:
+                    return 3
+                if 'high' in risk_str and 'critical' not in risk_str:
+                    return 2
+                if 'medium' in risk_str:
+                    return 1
+                if 'low' in risk_str:
+                    return 0
+            except Exception:
+                pass
+            # Fallback
+            return 0
         
         for sample in self.dataset:
             # Convert sensor readings to feature vectors
             feature_vector = self._extract_features(sample['sensor_readings'])
             features.append(torch.FloatTensor(feature_vector))
             
-            # Convert risk level to integer
-            labels.append(risk_to_int[sample['risk_level']])
+            # Convert risk level to integer robustly
+            labels.append(to_int_label(sample.get('risk_level')))
         
         return features, labels
     
