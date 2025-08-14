@@ -682,9 +682,20 @@ def train_model():
                 # Use raw data if preprocessing not done
                 data = st.session_state.dataset
             
-            # Split data
-            train_data, test_data = train_test_split(data, test_size=0.2, random_state=42)
-            train_data, val_data = train_test_split(train_data, test_size=0.2, random_state=42)
+            # Split data with stratification to ensure all classes are represented
+            try:
+                # Create stratification labels
+                stratify_labels = [sample['risk_level'].value for sample in data]
+                train_data, test_data = train_test_split(data, test_size=0.2, random_state=42, stratify=stratify_labels)
+                
+                # Stratify train/val split as well
+                train_stratify_labels = [sample['risk_level'].value for sample in train_data]
+                train_data, val_data = train_test_split(train_data, test_size=0.2, random_state=42, stratify=train_stratify_labels)
+            except ValueError as e:
+                # Fallback to non-stratified split if stratification fails
+                st.warning(f"⚠️ Could not use stratified split: {e}. Using random split instead.")
+                train_data, test_data = train_test_split(data, test_size=0.2, random_state=42)
+                train_data, val_data = train_test_split(train_data, test_size=0.2, random_state=42)
             
             # Initialize trainer
             evaluator = ModelEvaluator(st.session_state.model)

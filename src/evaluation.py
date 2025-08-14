@@ -296,11 +296,14 @@ class ModelEvaluator:
         # Confusion matrix
         results['confusion_matrix'] = confusion_matrix(all_labels, all_predictions)
         
-        # Classification report
-        class_names = ['Low Risk', 'Medium Risk', 'High Risk', 'Critical Risk']
+        # Classification report - dynamically determine class names based on actual classes present
+        unique_labels = sorted(np.unique(np.concatenate([all_labels, all_predictions])))
+        class_name_mapping = {0: 'Low Risk', 1: 'Medium Risk', 2: 'High Risk', 3: 'Critical Risk'}
+        present_class_names = [class_name_mapping.get(label, f'Class_{label}') for label in unique_labels]
+        
         results['classification_report'] = classification_report(
             all_labels, all_predictions, 
-            target_names=class_names,
+            target_names=present_class_names,
             zero_division=0
         )
         
