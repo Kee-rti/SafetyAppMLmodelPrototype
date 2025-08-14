@@ -208,18 +208,25 @@ class ModelInterpreter:
         # Use first class' SHAP values
         sv = np.array(shap_values_list[0])
         
+        # Normalize sample_idx to an integer scalar
+        try:
+            sample_index = int(np.asarray(sample_idx).astype(int).ravel()[0])
+        except Exception:
+            sample_index = int(sample_idx)
+        
         # Select the requested sample, then reduce to a 1D vector over features
         if sv.ndim == 1:
             sample_shap = sv
         else:
-            sample_shap = sv[int(sample_idx)]
+            sample_shap = sv[sample_index]
             if sample_shap.ndim > 1:
                 reduce_axes = tuple(range(sample_shap.ndim - 1))
                 sample_shap = np.mean(sample_shap, axis=reduce_axes)
         sample_shap = np.asarray(sample_shap).reshape(-1)
         
         # Corresponding sample features reduced to 1D for display
-        sample_features = np.array(features_np[int(sample_idx)])
+        feats = features_np[sample_index] if isinstance(features_np, np.ndarray) else features_np[int(sample_index)]
+        sample_features = np.asarray(feats)
         if sample_features.ndim > 1:
             reduce_axes = tuple(range(sample_features.ndim - 1))
             sample_features = np.mean(sample_features, axis=reduce_axes)
