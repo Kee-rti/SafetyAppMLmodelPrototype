@@ -39,18 +39,29 @@ This platform implements a complete ML development environment for safety monito
    cd sensor-fusion-ml-platform
    ```
 
-2. **Install dependencies**
+2. **Create virtual environment (recommended)**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
+   
+   Or if using uv:
+   ```bash
+   uv sync
+   ```
 
-3. **Run the application**
+4. **Run the application**
    ```bash
    streamlit run app.py
    ```
 
-4. **Access the platform**
-   - Open your browser to `http://localhost:5000`
+5. **Access the platform**
+   - Open your browser to `http://localhost:8501`
    - The platform will be ready for ML development
 
 ### First Steps
@@ -257,6 +268,27 @@ Predefined configurations for different use cases:
 - **Model Development**: Architecture selection guide
 - **Deployment**: Edge device setup instructions
 - **Troubleshooting**: Common issues and solutions
+
+### Dependencies & Requirements
+
+#### System Requirements
+- **Python**: 3.11 or higher
+- **Memory**: Minimum 4GB RAM (8GB+ recommended for training)
+- **Storage**: 2GB free space for models and datasets
+- **OS**: Windows, macOS, or Linux
+
+#### Core Dependencies
+- **PyTorch**: Deep learning framework for model development
+- **Streamlit**: Web application framework for the user interface
+- **scikit-learn**: Machine learning utilities and evaluation metrics
+- **NumPy/Pandas**: Data manipulation and numerical computing
+- **Matplotlib/Seaborn/Plotly**: Visualization and plotting
+
+#### Installation Tips
+- **Virtual Environment**: Always recommended to avoid dependency conflicts
+- **PyTorch**: CPU version sufficient for development; GPU version for faster training
+- **uv**: Alternative package manager for faster dependency resolution
+- **Development Tools**: Optional pytest, black, flake8 for code quality
 
 ## 🤝 Contributing
 
