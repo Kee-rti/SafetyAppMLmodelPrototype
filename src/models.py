@@ -415,9 +415,7 @@ class MultiModalFusionNet(nn.Module):
     def _split_sensor_features(self, x):
         """Split input tensor into sensor-specific features"""
         sensor_features = {}
-        start_idx = 0
-        
-        # Feature dimensions based on our extraction logic
+        # Canonical feature dimensions and base order in the 39-dim layout
         feature_dims = {
             'PIR': 8,
             'Thermal': 8,
@@ -426,18 +424,26 @@ class MultiModalFusionNet(nn.Module):
             'Audio': 8,
             'Door': 3
         }
-        
+        base_order = ['PIR', 'Thermal', 'Radar', 'Environmental', 'Audio', 'Door']
+        # Compute absolute start/end indices in the canonical layout
+        index_map = {}
+        cursor = 0
+        for sensor_name in base_order:
+            dim = feature_dims.get(sensor_name, 0)
+            index_map[sensor_name] = (cursor, cursor + dim)
+            cursor += dim
+
         for sensor_type in self.sensor_types:
             dim = feature_dims.get(sensor_type, 8)
-            end_idx = start_idx + dim
-            
-            if end_idx <= x.size(-1):
+            start_idx, end_idx = index_map.get(sensor_type, (None, None))
+            if start_idx is not None and end_idx is not None and end_idx <= x.size(-1):
                 sensor_features[sensor_type] = x[..., start_idx:end_idx]
             else:
-                # Pad if not enough features
-                sensor_features[sensor_type] = torch.zeros(x.size(0), x.size(1), dim, device=x.device)
-            
-            start_idx = end_idx
+                # Fallback: provide zero tensors of the expected dim
+                if x.dim() == 3:
+                    sensor_features[sensor_type] = torch.zeros(x.size(0), x.size(1), dim, device=x.device)
+                else:
+                    sensor_features[sensor_type] = torch.zeros(x.size(0), dim, device=x.device)
         
         return sensor_features
 
