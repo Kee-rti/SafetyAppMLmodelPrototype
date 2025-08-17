@@ -350,7 +350,13 @@ class ModelInterpreter:
             
             # Mask sensor features (set to zero)
             if max(sensor_indices) < masked_features.shape[-1]:
-                masked_features[:, :, sensor_indices] = 0
+                if masked_features.dim() == 3:
+                    masked_features[:, :, sensor_indices] = 0
+                elif masked_features.dim() == 2:
+                    masked_features[:, sensor_indices] = 0
+                else:
+                    # Unsupported shape; skip masking for this sensor
+                    pass
             
             # Calculate accuracy with masked sensor
             masked_accuracy = self._calculate_accuracy(masked_features, labels)
