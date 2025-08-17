@@ -1065,13 +1065,14 @@ def experiment_tracking_page():
     with col2:
         if st.button("💾 Save Model Version", use_container_width=True):
             if st.session_state.model_trained:
-                # Save model checkpoint
+                # Save model checkpoint (weights-only friendly)
                 checkpoint = {
                     'model_state_dict': st.session_state.model.state_dict(),
+                    'model_class': st.session_state.model.__class__.__name__,
                     'model_config': st.session_state.model_config,
                     'version': version_name,
                     'notes': version_notes,
-                    'timestamp': datetime.now(),
+                    'timestamp': datetime.now().isoformat(),
                     'performance': st.session_state.evaluation_results if hasattr(st.session_state, 'evaluation_results') else None
                 }
                 
@@ -1094,26 +1095,63 @@ def experiment_tracking_page():
             
             if st.button("📂 Load Model", use_container_width=True):
                 try:
-                    checkpoint = torch.load(f'model_versions/{selected_model}', map_location='cpu')
-                    
-                    st.write("**📋 Model Information:**")
-                    st.json({
-                        'version': checkpoint['version'],
-                        'timestamp': str(checkpoint['timestamp']),
-                        'notes': checkpoint['notes']
-                    })
-                    
-                    if checkpoint.get('performance'):
-                        st.write("**🎯 Performance Metrics:**")
-                        perf_metrics = {k: f"{v:.4f}" if isinstance(v, float) else str(v) 
-                                      for k, v in checkpoint['performance'].items() 
-                                      if k in ['accuracy', 'f1_macro', 'precision_macro', 'recall_macro']}
-                        st.json(perf_metrics)
-                    
-                except Exception as e:
-                    st.error(f"❌ Error loading model: {str(e)}")
-        else:
-            st.info("📂 No saved models found.")
+                    import torch.serialization as ts
+                    try:
+                        ts.add_safe_globals([datetime])
+                    except Exception:
+                        pass
+                    # First attempt: safe weights-only load
+                    checkpoint = torch.load(f'model_versions/{selected_model}', map_location='cpu', weights_only=True)
+                except Exception as e_weights_only:
+                    try:
+                        # Fallback for legacy checkpoints (trusted source required)
+                        checkpoint = torch.load(f'model_versions/{selected_model}', map_location='cpu', weights_only=False)
+                    except Exception as e_legacy:
+                        st.error(f"❌ Error loading model: {str(e_legacy)}")
+                        raise
+                
+                st.write("**📋 Model Information:**")
+                st.json({
+                    'version': checkpoint.get('version', 'unknown'),
+                    'timestamp': str(checkpoint.get('timestamp', 'unknown')),
+                    'notes': checkpoint.get('notes', '')
+                })
+                
+                if checkpoint.get('performance'):
+                    st.write("**🎯 Performance Metrics:**")
+                    perf_metrics = {k: f"{v:.4f}" if isinstance(v, float) else str(v) 
+                                  for k, v in checkpoint['performance'].items() 
+                                  if k in ['accuracy', 'f1_macro', 'precision_macro', 'recall_macro']}
+                    st.json(perf_metrics)
+                
+                # Reconstruct model and load weights if available
+                try:
+                    model_state = checkpoint.get('model_state_dict')
+                    if model_state:
+                        # Determine model type and rebuild
+                        model_class_name = checkpoint.get('model_class')
+                        cfg = checkpoint.get('model_config', {})
+                        fusion = get_fusion_technique('early', input_dim=39)
+                        from src.models import SensorFusionLSTM, SensorFusionTransformer, MultiModalFusionNet, DeepSensorFusionNet
+                        model = None
+                        if model_class_name == 'SensorFusionLSTM':
+                            model = SensorFusionLSTM(input_size=39, hidden_size=cfg.get('Hidden Size', 128), num_layers=cfg.get('Number of Layers', 2), num_classes=NUM_RISK_CLASSES, dropout=cfg.get('Dropout Rate', 0.2), bidirectional=cfg.get('Bidirectional', True), fusion_technique=fusion)
+                        elif model_class_name == 'SensorFusionTransformer':
+                            model = SensorFusionTransformer(input_size=39, d_model=cfg.get('Model Dimension', 256), nhead=cfg.get('Number of Heads', 8), num_layers=cfg.get('Number of Layers', 4), num_classes=NUM_RISK_CLASSES, dropout=cfg.get('Dropout Rate', 0.1), fusion_technique=fusion)
+                        elif model_class_name == 'MultiModalFusionNet':
+                            model = MultiModalFusionNet(sensor_types=cfg.get('Sensor Encoders', ['PIR','Thermal','Radar']), encoder_dim=cfg.get('Encoder Dimension', 128), fusion_dim=cfg.get('Fusion Dimension', 256), num_classes=NUM_RISK_CLASSES, fusion_technique=fusion)
+                        elif model_class_name == 'DeepSensorFusionNet':
+                            from src.models import DeepSensorFusionNet
+                            model = DeepSensorFusionNet(input_size=39, hidden_dim=cfg.get('Hidden Dimension', 256), num_blocks=cfg.get('Number of Blocks', 4), num_classes=NUM_RISK_CLASSES, dropout=cfg.get('Dropout Rate', 0.2), fusion_technique=fusion)
+                        else:
+                            # Default to LSTM
+                            model = SensorFusionLSTM(input_size=39, hidden_size=128, num_layers=2, num_classes=NUM_RISK_CLASSES, dropout=0.2, bidirectional=True, fusion_technique=fusion)
+                        
+                        model.load_state_dict(model_state, strict=False)
+                        st.session_state.model = model
+                        st.success("✅ Model weights loaded into a reconstructed model.")
+                except Exception as e_load:
+                    st.warning(f"⚠️ Loaded checkpoint metadata, but failed to load weights: {e_load}")
 
 if __name__ == "__main__":
     main()
