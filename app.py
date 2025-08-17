@@ -77,6 +77,7 @@ try:
     from src.onnx_export import ONNXExporter
     from src.interpretability import ModelInterpreter
     from utils.constants import ScenarioType, RiskLevel, SENSOR_TYPES, MODEL_CONFIGS
+    from utils.sensor_specs import get_sensor_feature_dimensions
     HAS_CUSTOM_MODULES = True
 except ImportError as e:
     HAS_CUSTOM_MODULES = False
@@ -134,6 +135,9 @@ if 'current_model' not in st.session_state:
     st.session_state.current_model = None
 if 'experiment_history' not in st.session_state:
     st.session_state.experiment_history = []
+
+# Derived constants
+NUM_RISK_CLASSES = len(list(RiskLevel)) if HAS_CUSTOM_MODULES else 4
 
 def main():
     st.title("🔬 Multi-Sensor Fusion Safety Monitoring")
@@ -517,7 +521,8 @@ def model_development_page():
                 
                 fusion = get_fusion_technique(
                     fusion_mapping[fusion_technique],
-                    input_dim=39  # Total feature dimensions
+                    input_dim=39,
+                    sensor_dims=get_sensor_feature_dimensions()
                 )
                 
                 # Initialize model based on type
@@ -526,7 +531,7 @@ def model_development_page():
                         input_size=39,  # Total features from all sensors
                         hidden_size=hidden_size,
                         num_layers=num_layers,
-                        num_classes=len(RiskLevel),
+                        num_classes=NUM_RISK_CLASSES,
                         dropout=dropout,
                         bidirectional=bidirectional,
                         fusion_technique=fusion
@@ -537,16 +542,17 @@ def model_development_page():
                         d_model=d_model,
                         nhead=nhead,
                         num_layers=num_layers,
-                        num_classes=len(RiskLevel),
+                        num_classes=NUM_RISK_CLASSES,
                         dropout=dropout,
                         fusion_technique=fusion
                     )
                 elif model_type == "Multi-Modal Fusion":
+                    ordered_sensors = [s for s in SENSOR_TYPES if s in sensor_encoders]
                     model = MultiModalFusionNet(
-                        sensor_types=sensor_encoders,
+                        sensor_types=ordered_sensors,
                         encoder_dim=encoder_dim,
                         fusion_dim=fusion_dim,
-                        num_classes=len(RiskLevel),
+                        num_classes=NUM_RISK_CLASSES,
                         fusion_technique=fusion
                     )
                 else:  # Deep Residual
@@ -555,7 +561,7 @@ def model_development_page():
                         input_size=39,
                         hidden_dim=hidden_dim,
                         num_blocks=num_blocks,
-                        num_classes=len(RiskLevel),
+                        num_classes=NUM_RISK_CLASSES,
                         dropout=dropout,
                         fusion_technique=fusion
                     )
@@ -750,7 +756,7 @@ def run_hyperparameter_optimization(n_trials, metric, study_name):
                 input_size=39,
                 hidden_size=hidden_size,
                 num_layers=2,
-                num_classes=len(RiskLevel),
+                num_classes=NUM_RISK_CLASSES,
                 dropout=dropout,
                 fusion_technique=fusion
             )

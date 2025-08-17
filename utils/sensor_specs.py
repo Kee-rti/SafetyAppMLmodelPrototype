@@ -16,12 +16,13 @@ def get_sensor_specifications(sensor_type: str) -> Dict[str, Any]:
     Returns:
         Dictionary containing sensor specifications
     """
-    sensor_type = sensor_type.upper()
-    
-    if sensor_type not in SENSOR_SPECIFICATIONS:
+    # Normalize to be case-insensitive while preserving canonical keys
+    normalized = sensor_type.strip().lower()
+    key_map = {k.lower(): k for k in SENSOR_SPECIFICATIONS.keys()}
+    if normalized not in key_map:
         raise ValueError(f"Unknown sensor type: {sensor_type}")
-    
-    return SENSOR_SPECIFICATIONS[sensor_type]
+    canonical_key = key_map[normalized]
+    return SENSOR_SPECIFICATIONS[canonical_key]
 
 def get_sensor_power_consumption(sensor_type: str) -> float:
     """
