@@ -4,7 +4,7 @@ A comprehensive Streamlit-based machine learning development platform for multi-
 
 ## 🎯 Overview
 
-This platform implements a complete ML development environment for safety monitoring systems that use multiple sensor modalities including PIR motion sensors, thermal cameras, radar, environmental sensors, audio sensors, and door sensors. The system is designed to detect trapped dependents and alert caregivers with high accuracy (≥99.8% as per TRS requirements).
+This platform implements a complete ML development environment for safety monitoring systems that use multiple sensor modalities including PIR motion sensors, thermal cameras, radar, environmental sensors, audio sensors, and door sensors. The system is designed to detect trapped dependents and alert caregivers with high accuracy.
 
 ## 🏗️ Architecture
 
